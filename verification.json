@@ -1,0 +1,50 @@
+{
+  "python": "3.13.7 (tags/v3.13.7:bcee1c3, Aug 14 2025, 14:15:11) [MSC v.1944 64 bit (AMD64)]",
+  "torch": "2.11.0+cpu",
+  "torchvision": "0.26.0+cpu",
+  "ultralytics": "8.3.235",
+  "device": "cpu",
+  "source_files_verified": 4062,
+  "images": {
+    "train": 1619,
+    "valid": 283,
+    "test": 126
+  },
+  "annotations": {
+    "train": {
+      "Defect": 1598,
+      "Bad Weld": 1089,
+      "Good Weld": 1896
+    },
+    "valid": {
+      "Defect": 273,
+      "Bad Weld": 194,
+      "Good Weld": 335
+    },
+    "test": {
+      "Defect": 89,
+      "Bad Weld": 95,
+      "Good Weld": 117
+    }
+  },
+  "classes": {
+    "0": "Bad Weld",
+    "1": "Good Weld",
+    "2": "Defect"
+  },
+  "sample_detections": 1,
+  "model_sha256_verified": true,
+  "test_metrics": {
+    "model_source": "avinashhm/welding-defect-yolov8-full-training",
+    "test_images": 126,
+    "precision": 0.7616900268035468,
+    "recall": 0.6219932472212685,
+    "mAP50": 0.7299133326657868,
+    "mAP50_95": 0.48029485149106427,
+    "per_class_mAP50_95": [
+      0.593528381317236,
+      0.5812181638160291,
+      0.26613800933992793
+    ]
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "repo": "avinashhm/welding-defect-yolov8-full-training",
+  "revision": "2cbc6dc08b74b6bab1ebafc59a3804e4bc43e517",
+  "file": "weights/best.pt",
+  "sha256": "92243d6d3b3c667f0dd8f2d2261d480c744912e97e1842e9b92dc9465de52c86",
+  "local_file": "models/welding.pt",
+  "author_reported_epochs": 100,
+  "imgsz": 640,
+  "trained_locally": false
+}

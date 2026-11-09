@@ -1,0 +1,8 @@
+plugins { id 'com.android.application' version '8.7.3' apply false }
+
+// Keep Windows JVM test classpaths ASCII even when the source folder is Chinese.
+if (providers.gradleProperty('weldingBuildRoot').isPresent()) {
+    allprojects {
+        layout.buildDirectory = file("${rootProject.property('weldingBuildRoot')}/${project.name}")
+    }
+}

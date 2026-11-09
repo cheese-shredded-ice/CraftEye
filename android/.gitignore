@@ -1,0 +1,6 @@
+.gradle/
+.signing/
+local.properties
+**/build/
+logs/
+app/src/main/assets/welding.onnx
