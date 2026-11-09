@@ -1,5 +1,6 @@
 """Paginated history table and score trend for the presentation workspace."""
 import csv
+import base64
 from datetime import datetime
 from html import escape
 import io
@@ -8,7 +9,8 @@ import altair as alt
 import pandas as pd
 import streamlit as st
 
-from recognition_history import load_records
+from recognition_history import load_records, load_record_images
+from training_trends import summary_html
 
 PAGE_SIZE = 5
 
@@ -57,15 +59,19 @@ def render_history():
             page = min(st.session_state.get('history_page', 1), pages)
             st.session_state['history_page'] = page
             visible = list(reversed(records))[(page-1)*PAGE_SIZE:page*PAGE_SIZE]
+            images = load_record_images([record['run_id'] for record in visible])
             rows = []
             for record in visible:
                 score = record['score']
                 color = '#64748b' if score is None else '#dc2626' if score < 60 else '#b45309' if score < 80 else '#15803d'
                 score_text = '—' if score is None else str(score)
                 source = '摄像头' if record['source_type'] == 'camera' else '图片'
-                rows.append(f'<tr><td>{record["sequence"]}</td><td>{escape(display_time(record["generated_at"]))}<small>{source}</small></td>'
+                image_data = images.get(record['run_id'])
+                picture = (f'<img class="history-thumbnail" src="data:image/png;base64,{base64.b64encode(image_data).decode("ascii")}" alt="第{record["sequence"]}次 YOLO 检测结果">'
+                           if image_data else '<span class="history-no-image">暂无图片</span>')
+                rows.append(f'<tr><td title="{escape(record["generated_at"], quote=True)} · {source}">{record["sequence"]}</td><td>{picture}</td>'
                             f'<td>{escape(defect_label(record["defects"]))}</td><td style="color:{color}" title="{escape(record["reason"], quote=True)}"><b>{score_text}</b></td></tr>')
-            st.html('<table class="history-table"><thead><tr><th>序号</th><th>时间 / 来源</th><th>缺陷类型</th><th>评分</th></tr></thead><tbody>' + ''.join(rows) + '</tbody></table>')
+            st.html(f'<table class="history-table" style="--history-rows:{len(visible)}"><thead><tr><th>序号</th><th>检测图片</th><th>缺陷类型</th><th>评分</th></tr></thead><tbody>' + ''.join(rows) + '</tbody></table>')
             previous, status, following = st.columns([1, 1.4, 1])
             with previous:
                 if st.button('上一页', disabled=page <= 1, key='history_previous'):
@@ -81,7 +87,8 @@ def render_history():
         st.subheader('分数成长曲线')
         scored = [record for record in records if record['score'] is not None]
         if not scored:
-            st.html('<div class="history-empty">等待首个评分<br>暂无法评分的记录不计入曲线</div>')
+            st.html('<div class="trend-chart-empty">等待首个有效评分</div>')
+            st.html(summary_html(records))
             return
         first, latest = scored[0]['score'], scored[-1]['score']
         change = latest - first
@@ -94,6 +101,6 @@ def render_history():
                     scale=alt.Scale(domain=[max(0, len(scored)-len(recent)), len(scored)+1])),
             y=alt.Y('评分:Q', title='分数', scale=alt.Scale(domain=[0, 100]), axis=alt.Axis(values=[0, 20, 40, 60, 80, 100])),
             tooltip=['记录序号:Q', '时间:N', '评分:Q'],
-        ).properties(height=280).configure_axis(labelFontSize=20, titleFontSize=22, titlePadding=10, labelColor='#334155', titleColor='#334155').configure_view(stroke=None)
+        ).properties(height=240).configure_axis(labelFontSize=20, titleFontSize=22, titlePadding=10, labelColor='#334155', titleColor='#334155').configure_view(stroke=None)
         st.altair_chart(chart, width='stretch', key='history_score_chart')
-        st.html('<div class="history-page">最近 30 次有效评分 · 满分 100</div>')
+        st.html(summary_html(records))

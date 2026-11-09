@@ -16,6 +16,7 @@ def detection_summary(rows):
     st.html('<div class="detection-summary">' + (badges or '<span>未检出目标</span>') + '</div>')
 
 
-def ai_placeholder(message='完成本地识别后，即可生成评分与教学建议。'):
+def ai_placeholder(message=''):
     st.subheader('综合分析')
-    st.html(f'<div class="ai-placeholder"><span>✦</span><h3>本次学习反馈</h3><p>{escape(message)}</p></div>')
+    description = f'<p>{escape(message)}</p>' if message else ''
+    st.html(f'<div class="ai-placeholder"><span>✦</span><h3>本次学习反馈</h3>{description}</div>')

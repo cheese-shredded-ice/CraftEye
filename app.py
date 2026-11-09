@@ -9,7 +9,7 @@ import streamlit as st
 from common import ROOT, DATASET, MODEL, CLASS_NAMES, CHINESE_NAMES
 from advice import OBSERVATIONS
 from inference import draw_boxes, infer
-from ai_ui import render_ai_settings, render_ai_analysis
+from ai_ui import render_ai_settings, render_ai_analysis, submit_analysis
 from workspace_ui import install_layout, detection_summary, ai_placeholder
 
 st.set_page_config(page_title='匠眼·慧焊 数智评鉴系统', page_icon='🔎', layout='wide', initial_sidebar_state='collapsed')
@@ -55,10 +55,13 @@ with detect_tab:
                 image = ImageOps.exif_transpose(Image.open(source)).convert('RGB')
                 fingerprint = hashlib.sha256(image.tobytes() + str((image.size, confidence,
                     MODEL.stat().st_mtime_ns if MODEL.exists() else None)).encode()).hexdigest()
-                if submitted:
+                if submitted and st.session_state.get('_ai_job_image'):
+                    st.info('综合分析正在进行，请等待本次完成后再开始识别。')
+                elif submitted:
                     with st.spinner('正在识别…'):
                         annotated, rows = infer(image, confidence)
                     st.session_state['detection'] = {'fingerprint': fingerprint, 'image': annotated, 'rows': rows}
+                    submit_analysis('image', fingerprint, image, annotated, rows, observations)
                 candidate = st.session_state.get('detection')
                 if candidate and candidate['fingerprint'] == fingerprint:
                     detection = candidate
@@ -79,7 +82,7 @@ with detect_tab:
         else:
             with export:
                 st.button('下载结果', disabled=True, use_container_width=True)
-            st.html('<div class="ai-placeholder"><span>＋</span><h3>选择一张焊接图片</h3><p>上传照片，或选用测试集图片</p></div>')
+            st.html('<div class="ai-placeholder"><span>＋</span><h3>选择一张焊接图片</h3></div>')
     with feedback, st.container(key='image-ai'):
         if detection and image is not None:
             render_ai_analysis('image', fingerprint, image, detection['image'], detection['rows'], observations)

@@ -76,7 +76,8 @@ def main():
             page.get_by_role('heading', name='匠眼·慧焊 数智评鉴系统', exact=True).click()
             button = page.locator('button:visible').filter(has_text='综合分析当前图片').last
             expect(button).to_be_enabled(timeout=30000)
-            button.click()
+            assert len((OUTPUT/'requests.jsonl').read_text().splitlines()) == 0
+            page.get_by_role('button', name='开始识别', exact=True).click()
             expect(page.get_by_text('【图中现象】', exact=True)).to_be_visible(timeout=30000)
             expect(page.get_by_text('【缺陷类型】', exact=True)).to_be_visible()
             expect(page.locator('[data-weld-score="76"]')).to_be_visible()
@@ -111,6 +112,11 @@ def main():
             # Observe several periodic refreshes; none may send another API request.
             page.wait_for_timeout(2500)
             assert len((OUTPUT/'requests.jsonl').read_text().splitlines())==1
+            # Repeating recognition on the same picture is a new explicit analysis.
+            page.get_by_role('button', name='开始识别', exact=True).click()
+            expect(page.get_by_text('【图中现象】', exact=True)).to_be_visible(timeout=30000)
+            page.wait_for_timeout(2500)
+            assert len((OUTPUT/'requests.jsonl').read_text().splitlines()) == 2
             page.get_by_role('button', name='设置', exact=True).click()
             field = page.get_by_label('视觉模型', exact=True)
             field.fill('simulate-401')
@@ -118,10 +124,11 @@ def main():
             page.get_by_role('heading', name='匠眼·慧焊 数智评鉴系统', exact=True).click()
             expect(page.get_by_text('图片、现场现象或模型配置已变化，请点击按钮重新分析当前输入。')).to_be_visible(timeout=10000)
             expect(page.get_by_text('【图中现象】', exact=True)).not_to_be_visible()
-            button.click()
+            page.get_by_role('button', name='开始识别', exact=True).click()
             expect(page.get_by_text('API Key 验证失败，请检查密钥及所属地域。', exact=True)).to_be_visible(timeout=30000)
             assert 'test-key-not-real must not be displayed' not in page.locator('body').inner_text()
-            assert len((OUTPUT/'requests.jsonl').read_text().splitlines())==2
+            page.wait_for_timeout(2500)
+            assert len((OUTPUT/'requests.jsonl').read_text().splitlines())==3
             # Use a fresh browser session to independently verify the camera workflow.
             page.close()
             page = context.new_page()
@@ -162,7 +169,7 @@ def main():
             assert report['analysis']['score']['分数'] == 76
             assert report['analysis']['sections']['缺陷类型']
             requests = [json.loads(row) for row in (OUTPUT/'requests.jsonl').read_text().splitlines()]
-            assert len(requests)==3 and all(r['distinct_images'] for r in requests)
+            assert len(requests)==4 and all(r['distinct_images'] for r in requests)
             assert all(r['focus_crops'] > 0 for r in requests)
             page.get_by_text('【图中现象】',exact=True).scroll_into_view_if_needed()
             page.screenshot(path=str(OUTPUT/'ai-analysis-simulated.png'),full_page=True)
@@ -170,19 +177,21 @@ def main():
             page.get_by_role('button',name='清除快照',exact=True).click()
             expect(capture).to_be_disabled(timeout=30000)
             page.get_by_role('tab', name='识别记录', exact=True).click()
-            expect(page.locator('.history-table tbody tr')).to_have_count(2, timeout=10000)
+            expect(page.locator('.history-table tbody tr')).to_have_count(3, timeout=10000)
+            expect(page.locator('.history-thumbnail')).to_have_count(3)
             expect(page.get_by_text('分数成长曲线', exact=True)).to_be_visible()
             page.wait_for_timeout(2500)
-            expect(page.locator('.history-table tbody tr')).to_have_count(2)
+            expect(page.locator('.history-table tbody tr')).to_have_count(3)
             page.reload()
             expect(page.locator('[data-test-ready]')).to_be_attached(timeout=60000)
             page.get_by_role('tab', name='识别记录', exact=True).click()
-            expect(page.locator('.history-table tbody tr')).to_have_count(2, timeout=10000)
+            expect(page.locator('.history-table tbody tr')).to_have_count(3, timeout=10000)
+            expect(page.locator('.history-thumbnail')).to_have_count(3)
             assert not errors, errors
             print(json.dumps({'image_analysis':'passed','camera_snapshot_analysis':'passed',
                 'single_screen_desktop_sizes':'passed',
                 'history_persistence_and_deduplication':'passed',
-                'manual_submit_only':'passed','stale_report_hidden':'passed','safe_401_error':'passed',
+                'recognize_triggers_analysis_once':'passed','stale_report_hidden':'passed','safe_401_error':'passed',
                 'exports':'passed','simulated_api_requests':len(requests),'real_api_called':False},indent=2),flush=True)
         except Exception:
             page.screenshot(path=str(OUTPUT/'ai-test-failure.png'),full_page=True)

@@ -91,11 +91,29 @@ h3 { font-size:clamp(36px,2.4vw,45px) !important; padding:0 !important; line-hei
 .history-table th:nth-child(4) { width:16%; }
 .history-table small { display:block;color:#475569;font-size:.75em; }
 .history-table td:last-child { font-size:1.25em; }
+.st-key-history-table { --history-table-height:calc(100dvh - 370px); }
+.history-table { height:var(--history-table-height); }
+.history-table thead { height:50px; }
+.history-table tbody tr { height:calc((var(--history-table-height) - 50px) / var(--history-rows)); }
+.history-table td { vertical-align:middle; }
+.history-thumbnail { display:block;width:100%;height:calc((var(--history-table-height) - 50px) / var(--history-rows) - 26px);min-height:32px;object-fit:contain;border-radius:6px;background:#f1f5f9; }
+.history-no-image { display:block;text-align:center;color:#64748b;font-size:.8em; }
 .history-page { font-size:clamp(18px,1.25vw,24px);text-align:center;color:#475569;padding:6px 0; }
 .history-stats { display:flex;justify-content:space-between;gap:10px;font-size:clamp(21px,1.5vw,29px);color:#334155; }
 .history-stats b { color:#0f766e;font-size:1.4em; }
+.training-trend { background:#f0f8f7;border:1px solid #d5e9e5;border-radius:12px;padding:16px 18px;color:#162334;min-height:calc(100dvh - 600px); }
+.training-trend h4 { font-size:clamp(26px,1.8vw,36px);line-height:1.2;margin:0 0 14px;color:#075e57; }
+.trend-row { display:grid;grid-template-columns:4.2em minmax(0,1fr);gap:10px;margin-top:12px;font-size:clamp(22px,1.55vw,32px);line-height:1.35; }
+.trend-row strong { color:#075e57;white-space:nowrap; }
+.trend-row p { margin:0;font-size:inherit;line-height:inherit;overflow-wrap:anywhere; }
+.trend-chart-empty { height:180px;display:flex;align-items:center;justify-content:center;color:#64748b;font-size:26px; }
 .history-empty { height:320px;display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.8;font-size:clamp(23px,1.6vw,30px);color:#64748b; }
 @media (max-height:800px) {
     .st-key-history-table,.st-key-history-growth { height:calc(100dvh - 153px);padding:10px; }
     .history-table td,.history-table th { padding:7px 6px; }
+    .st-key-history-table { --history-table-height:calc(100dvh - 310px); }
+    .history-thumbnail { height:calc((var(--history-table-height) - 50px) / var(--history-rows) - 16px); }
+    .training-trend { padding:10px 12px;min-height:0; }
+    .training-trend h4 { font-size:26px;margin-bottom:8px; }
+    .trend-row { font-size:22px;line-height:1.25;margin-top:8px; }
 }

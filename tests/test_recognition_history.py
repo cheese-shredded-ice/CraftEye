@@ -1,10 +1,14 @@
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import closing
 from pathlib import Path
 import tempfile
+import io
+import sqlite3
 import unittest
 from unittest.mock import patch
 
-from recognition_history import load_records, save_record
+from PIL import Image, ImageDraw
+from recognition_history import load_records, save_record, load_record_images
 
 
 def report(score=76):
@@ -50,7 +54,7 @@ class RecognitionHistoryTest(unittest.TestCase):
         from ai_ui import analyze_and_record
         with patch('ai_ui.analyze', return_value=report()), patch('ai_ui.save_record') as save:
             result = analyze_and_record('run', 'camera', 'input')
-        save.assert_called_once_with('run', 'camera', result)
+        save.assert_called_once_with('run', 'camera', result, annotated=None)
         with patch('ai_ui.analyze', side_effect=RuntimeError('failed')), patch('ai_ui.save_record') as save:
             with self.assertRaises(RuntimeError):
                 analyze_and_record('failed', 'image')
@@ -62,6 +66,37 @@ class RecognitionHistoryTest(unittest.TestCase):
             result = analyze_and_record('run', 'image')
         self.assertEqual(result['score']['分数'], 76)
         self.assertTrue(result['history_save_error'])
+
+    def test_annotated_pixels_persist_and_duplicate_does_not_replace_image(self):
+        image = Image.new('RGB', (800, 600), 'gray')
+        ImageDraw.Draw(image).rectangle((100, 100, 500, 400), outline='red', width=6)
+        save_record('picture', 'image', report(), self.path, annotated=image)
+        save_record('picture', 'image', report(), self.path, annotated=Image.new('RGB', (10, 10), 'black'))
+        full = load_record_images(['picture'], self.path, full_size=True)['picture']
+        restored = Image.open(io.BytesIO(full))
+        self.assertEqual(restored.size, image.size)
+        self.assertEqual(restored.tobytes(), image.tobytes())
+        thumbnail = Image.open(io.BytesIO(load_record_images(['picture'], self.path)['picture']))
+        self.assertLessEqual(thumbnail.width, 400)
+        self.assertLessEqual(thumbnail.height, 240)
+
+    def test_existing_database_keeps_legacy_records_without_inventing_images(self):
+        save_record('legacy', 'image', report(), self.path)
+        with closing(sqlite3.connect(self.path)) as connection, connection:
+            connection.execute('DROP TABLE recognition_images')
+        self.assertEqual(len(load_records(self.path)), 1)
+        self.assertEqual(load_record_images(['legacy'], self.path), {})
+        save_record('new', 'camera', report(), self.path, annotated=Image.new('RGB', (20, 20)))
+        self.assertEqual(len(load_records(self.path)), 2)
+        self.assertEqual(set(load_record_images(['legacy', 'new'], self.path)), {'new'})
+
+    def test_worker_saves_annotated_image_not_original(self):
+        from ai_ui import analyze_and_record
+        original = Image.new('RGB', (30, 30), 'gray')
+        annotated = Image.new('RGB', (30, 30), 'red')
+        with patch('ai_ui.analyze', return_value=report()), patch('ai_ui.save_record') as save:
+            result = analyze_and_record('run', 'camera', original, annotated)
+        save.assert_called_once_with('run', 'camera', result, annotated=annotated)
 
 
 if __name__ == '__main__':

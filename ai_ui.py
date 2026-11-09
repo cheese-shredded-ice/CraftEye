@@ -56,11 +56,31 @@ def get_executor():
 def analyze_and_record(run_id, namespace, *args, **kwargs):
     report = analyze(*args, **kwargs)
     try:
-        save_record(run_id, namespace, report)
+        save_record(run_id, namespace, report, annotated=args[1] if len(args) > 1 else kwargs.get('annotated'))
     except Exception:
         # Keep a successful report usable even when local storage is unavailable.
         report['history_save_error'] = True
     return report
+
+
+def submit_analysis(namespace, source_id, original, annotated, rows, observations):
+    """Start exactly one request for an explicit recognition or analysis action."""
+    config = current_config()
+    job_key = f'_ai_job_{namespace}'
+    if not config.api_key or st.session_state.get(job_key):
+        return False
+    context, learning_goal = '', DEFAULT_LEARNING_GOAL
+    identity = analysis_identity(original, annotated, rows, observations, context, config, learning_goal)
+    inputs = {'source_id': source_id, 'source_type': namespace, 'detections': copy.deepcopy(rows),
+              'manual_observations': list(observations), 'process_context': context,
+              'learning_goal': learning_goal, 'original_size': [original.width, original.height]}
+    future = get_executor().submit(analyze_and_record, uuid.uuid4().hex, namespace, original.copy(), annotated.copy(),
+                                    copy.deepcopy(rows), list(observations), context, config,
+                                    learning_goal=learning_goal)
+    st.session_state[job_key] = {'identity': identity, 'future': future, 'inputs': inputs}
+    st.session_state.pop(f'_ai_error_{namespace}', None)
+    st.session_state.pop(f'_ai_result_{namespace}', None)
+    return True
 
 
 @st.fragment(run_every=1.0)
@@ -91,14 +111,7 @@ def render_ai_analysis(namespace, source_id, original, annotated, rows, observat
         clicked = st.button('综合分析当前图片', key=f'ai_submit_{namespace}', type='primary',
                             disabled=bool(job) or not config.api_key, use_container_width=True)
     if clicked:
-        inputs = {'source_id': source_id, 'source_type': namespace, 'detections': copy.deepcopy(rows),
-                  'manual_observations': list(observations), 'process_context': context.strip(),
-                  'learning_goal': learning_goal, 'original_size': [original.width, original.height]}
-        future = get_executor().submit(analyze_and_record, uuid.uuid4().hex, namespace, original.copy(), annotated.copy(),
-                                        copy.deepcopy(rows), list(observations), context, config,
-                                        learning_goal=learning_goal)
-        st.session_state[job_key] = {'identity': identity, 'future': future, 'inputs': inputs}
-        st.session_state.pop(error_key, None)
+        submit_analysis(namespace, source_id, original, annotated, rows, observations)
         # Disable the submit button immediately; never resubmit during periodic refreshes.
         st.rerun(scope='fragment')
     if job:
