@@ -11,6 +11,33 @@ ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / 'outputs' / 'ai-check'
 
 
+def assert_report_stable(page, panel):
+    # Observe multiple old timer intervals, including frame-by-frame transient blanks.
+    page.wait_for_timeout(500)  # Let the user-requested view transition finish first.
+    result = page.evaluate('''async (panel) => {
+        const root = document.querySelector(panel + ' .teaching-report');
+        const image = root.querySelector('.reference-grid img');
+        let replacements = 0, blanks = 0, movement = 0;
+        const initial = root.getBoundingClientRect();
+        const start = performance.now();
+        await new Promise(resolve => {
+            const check = () => {
+                const current = document.querySelector(panel + ' .teaching-report');
+                if (current !== root || !root.isConnected || !image.isConnected) replacements++;
+                if (!current || !image.complete || !image.naturalWidth) blanks++;
+                if (current) {
+                    const box = current.getBoundingClientRect();
+                    movement = Math.max(movement, Math.abs(box.y - initial.y), Math.abs(box.height - initial.height));
+                }
+                if (performance.now() - start < 3500) requestAnimationFrame(check); else resolve();
+            };
+            requestAnimationFrame(check);
+        });
+        return {replacements, blanks, movement};
+    }''', panel)
+    assert result == {'replacements': 0, 'blanks': 0, 'movement': 0}, result
+
+
 def assert_single_screen(page, *panels):
     result = page.evaluate('''(panels) => {
         const failures = [];
@@ -24,10 +51,10 @@ def assert_single_screen(page, *panels):
                 failures.push(selector + ': overflowing ' + element.scrollHeight + '/' + element.clientHeight);
         }
         const report = document.querySelector(panels[1] + ' .teaching-report');
-        if (report && report.scrollHeight > report.clientHeight + 2) failures.push('report text clipped');
+        if (report && report.scrollHeight > report.clientHeight + 2) failures.push('report text clipped ' + report.scrollHeight + '/' + report.clientHeight + ' ' + [...report.children].map(el => el.tagName + ':' + el.getBoundingClientRect().height).join(','));
         if (report && parseFloat(getComputedStyle(report).fontSize) < 18) failures.push('presentation text too small');
         if (report && [...report.querySelectorAll('.feedback-text p')].some(el => parseFloat(getComputedStyle(el).fontSize) < 18)) failures.push('feedback text too small');
-        for (const image of document.querySelectorAll(panels[1] + ' .reference-grid img'))
+        for (const image of document.querySelectorAll(panels[1] + ' .reference-grid img, ' + panels[1] + ' .radar-image'))
             if (!image.complete || !image.naturalWidth) failures.push('reference image not loaded');
         return failures;
     }''', list(panels))
@@ -65,7 +92,8 @@ def main():
             page.get_by_role('tab', name='图片识别', exact=True).click()
             page.get_by_role('button', name='选择图片', exact=True).click()
             page.get_by_test_id('stFileUploader').locator('input[type=file]').set_input_files(str(sample))
-            page.get_by_role('heading', name='匠眼·慧焊 数智评鉴系统', exact=True).click()
+            expect(page.get_by_role('button', name='开始识别', exact=True)).to_be_enabled(timeout=30000)
+            page.get_by_role('heading', name='数智评鉴系统', exact=True).click()
             page.get_by_role('button', name='开始识别', exact=True).click(timeout=60000)
             expect(page.locator('button:visible').filter(has_text='综合分析当前图片').last).to_be_disabled(timeout=30000)
             page.get_by_role('button', name='设置', exact=True).click()
@@ -73,24 +101,38 @@ def main():
             key = page.get_by_label('API Key', exact=True)
             key.fill('test-key-not-real')
             key.press('Tab')
-            page.get_by_role('heading', name='匠眼·慧焊 数智评鉴系统', exact=True).click()
+            page.get_by_role('heading', name='数智评鉴系统', exact=True).click()
             button = page.locator('button:visible').filter(has_text='综合分析当前图片').last
             expect(button).to_be_enabled(timeout=30000)
             assert len((OUTPUT/'requests.jsonl').read_text().splitlines()) == 0
             page.get_by_role('button', name='开始识别', exact=True).click()
+            expect(page.locator('.st-key-image-ai .radar-image')).to_be_visible(timeout=30000)
+            page.wait_for_timeout(1000)  # Completion re-registers the view without its polling timer.
+            expect(page.locator('.st-key-image-stage [data-testid="stImage"]')).to_have_count(1, timeout=30000)
+            for width, height in ((1366, 768), (1280, 720), (1920, 1080)):
+                page.set_viewport_size({'width': width, 'height': height})
+                page.wait_for_timeout(200)
+                assert_single_screen(page, '.st-key-image-stage', '.st-key-image-ai')
+                page.screenshot(path=str(OUTPUT/f'six-dimensions-{width}x{height}.png'))
+            page.set_viewport_size({'width':1366,'height':768})
+            page.get_by_text('改进建议', exact=True).click()
             expect(page.get_by_text('【图中现象】', exact=True)).to_be_visible(timeout=30000)
             expect(page.get_by_text('【缺陷类型】', exact=True)).to_be_visible()
-            expect(page.locator('[data-weld-score="76"]')).to_be_visible()
+            expect(page.locator('[data-weld-score="73"]')).to_be_visible()
             expect(page.locator('[aria-label="缺陷对比图"]')).to_be_visible()
             expect(page.get_by_text('气孔 · 典型示例', exact=True)).to_be_visible()
             expect(page.get_by_text('咬边 · 典型示例', exact=True)).to_be_visible()
-            expect(page.locator('[data-score-ring="76"]')).to_be_visible()
-            assert '180, 83, 9' in page.locator('[data-score-ring]').evaluate('(el) => getComputedStyle(el).backgroundImage')
+            expect(page.locator('[data-score-progress="73"]')).to_be_visible()
+            expect(page.locator('.score-status')).to_have_text('不符合')
+            expect(page.locator('.score-grade.active')).to_have_count(0)
+            assert page.locator('.score-marker').evaluate('(el) => el.style.left') == '73%'
+            expect(page.get_by_role('meter')).to_have_attribute('aria-valuenow', '73')
             for removed in ('0–59 红色', '本地运行 · 图片检测', '三类标签：', '未检出目标不代表焊接合格'):
                 assert removed not in page.locator('body').inner_text()
             page.screenshot(path=str(OUTPUT/'image-score-references.png'),full_page=True)
             expect(page.get_by_text('【可能原因】', exact=True)).to_be_visible()
             expect(page.get_by_text('【改良建议】', exact=True)).to_be_visible()
+            assert_report_stable(page, '.st-key-image-ai')
             for width, height in ((1366, 768), (1280, 720), (1920, 1080)):
                 page.set_viewport_size({'width':width,'height':height})
                 page.wait_for_timeout(200)
@@ -102,10 +144,17 @@ def main():
                 page.get_by_role('button', name='保存完整分析报告（JSON）', exact=True).click()
             download.value.save_as(OUTPUT/'image-ai-report.json')
             report = json.loads((OUTPUT/'image-ai-report.json').read_text(encoding='utf-8'))
-            page.get_by_role('heading', name='匠眼·慧焊 数智评鉴系统', exact=True).click()
+            page.get_by_role('heading', name='数智评鉴系统', exact=True).click()
             assert report['inputs']['source_type']=='image'
             assert report['analysis']['sections']['缺陷类型']
-            assert report['analysis']['score']['分数'] == 76
+            assert report['analysis']['score']['分数'] == 73
+            assert len(report['analysis']['dimensions']) == 6
+            assert report['analysis']['score']['评分类型'] == '短板约束综合分'
+            assert report['analysis']['dimensions']['焊道走向稳定性']['得分'] == 11
+            assert report['analysis']['dimensions']['焊道走向稳定性']['分数'] == 73
+            assert '接头强度' not in report['analysis']['dimensions']
+            assert report['analysis']['dimensions']['焊趾过渡']['得分'] == 12
+            assert report['analysis']['dimensions']['焊趾过渡']['分数'] == 80
             assert report['analysis']['focus_regions']
             assert all(region['confidence'] > 0.6 for region in report['analysis']['focus_regions'])
             assert 'test-key-not-real' not in json.dumps(report)
@@ -114,6 +163,8 @@ def main():
             assert len((OUTPUT/'requests.jsonl').read_text().splitlines())==1
             # Repeating recognition on the same picture is a new explicit analysis.
             page.get_by_role('button', name='开始识别', exact=True).click()
+            expect(page.locator('[data-weld-score="73"]')).to_be_visible(timeout=30000)
+            page.get_by_text('改进建议', exact=True).click()
             expect(page.get_by_text('【图中现象】', exact=True)).to_be_visible(timeout=30000)
             page.wait_for_timeout(2500)
             assert len((OUTPUT/'requests.jsonl').read_text().splitlines()) == 2
@@ -121,7 +172,7 @@ def main():
             field = page.get_by_label('视觉模型', exact=True)
             field.fill('simulate-401')
             field.press('Tab')
-            page.get_by_role('heading', name='匠眼·慧焊 数智评鉴系统', exact=True).click()
+            page.get_by_role('heading', name='数智评鉴系统', exact=True).click()
             expect(page.get_by_text('图片、现场现象或模型配置已变化，请点击按钮重新分析当前输入。')).to_be_visible(timeout=10000)
             expect(page.get_by_text('【图中现象】', exact=True)).not_to_be_visible()
             page.get_by_role('button', name='开始识别', exact=True).click()
@@ -140,7 +191,7 @@ def main():
             page.get_by_label('API Key', exact=True).fill('test-key-not-real')
             page.get_by_label('API Key', exact=True).press('Tab')
             expect(page.get_by_text('密钥已配置，调用权限将在分析时验证。')).to_be_visible(timeout=30000)
-            page.get_by_role('heading', name='匠眼·慧焊 数智评鉴系统', exact=True).click()
+            page.get_by_role('heading', name='数智评鉴系统', exact=True).click()
             page.get_by_role('tab',name='摄像头实时识别',exact=True).click()
             iframe = page.frame_locator('iframe[title*="webrtc_streamer"]')
             iframe.get_by_role('button',name='开始实时识别',exact=True).click()
@@ -150,8 +201,17 @@ def main():
             expect(page.get_by_text('画面已暂停 · 摄像头已关闭', exact=True)).to_be_visible(timeout=30000)
             expect(page.locator('button:visible').filter(has_text='综合分析当前图片').last).to_be_enabled(timeout=30000)
             page.locator('button:visible').filter(has_text='综合分析当前图片').last.click()
+            expect(page.locator('.st-key-camera-ai .radar-image')).to_be_visible(timeout=30000)
+            page.wait_for_timeout(1000)
+            expect(page.locator('[data-weld-score="73"]')).to_be_visible()
+            for width, height in ((1366, 768), (1280, 720), (1920, 1080)):
+                page.set_viewport_size({'width':width,'height':height})
+                page.wait_for_timeout(200)
+                assert_single_screen(page, '.st-key-camera-stage', '.st-key-camera-ai')
+            page.get_by_text('改进建议', exact=True).click()
             expect(page.get_by_text('【图中现象】',exact=True)).to_be_visible(timeout=30000)
-            expect(page.locator('[data-weld-score="76"]')).to_be_visible()
+            assert_report_stable(page, '.st-key-camera-ai')
+            expect(page.locator('[data-weld-score="73"]')).to_be_visible()
             expect(page.get_by_text('气孔 · 典型示例', exact=True)).to_be_visible()
             for width, height in ((1366, 768), (1280, 720), (1920, 1080)):
                 page.set_viewport_size({'width':width,'height':height})
@@ -163,10 +223,10 @@ def main():
             with page.expect_download() as download:
                 page.get_by_role('button',name='保存完整分析报告（JSON）',exact=True).click()
             download.value.save_as(OUTPUT/'camera-ai-report.json')
-            page.get_by_role('heading', name='匠眼·慧焊 数智评鉴系统', exact=True).click()
+            page.get_by_role('heading', name='数智评鉴系统', exact=True).click()
             report = json.loads((OUTPUT/'camera-ai-report.json').read_text(encoding='utf-8'))
             assert report['inputs']['source_type']=='camera'
-            assert report['analysis']['score']['分数'] == 76
+            assert report['analysis']['score']['分数'] == 73
             assert report['analysis']['sections']['缺陷类型']
             requests = [json.loads(row) for row in (OUTPUT/'requests.jsonl').read_text().splitlines()]
             assert len(requests)==4 and all(r['distinct_images'] for r in requests)
@@ -189,7 +249,7 @@ def main():
             expect(page.locator('.history-thumbnail')).to_have_count(3)
             assert not errors, errors
             print(json.dumps({'image_analysis':'passed','camera_snapshot_analysis':'passed',
-                'single_screen_desktop_sizes':'passed',
+                'single_screen_desktop_sizes':'passed','idle_report_stability':'passed',
                 'history_persistence_and_deduplication':'passed',
                 'recognize_triggers_analysis_once':'passed','stale_report_hidden':'passed','safe_401_error':'passed',
                 'exports':'passed','simulated_api_requests':len(requests),'real_api_called':False},indent=2),flush=True)

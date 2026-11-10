@@ -5,6 +5,7 @@ import json
 import io
 import sqlite3
 from PIL import Image
+from scoring import RUBRIC_VERSION
 
 HISTORY_DB = Path(__file__).resolve().parent / 'outputs' / 'recognition-history.sqlite3'
 
@@ -28,6 +29,16 @@ def connect(path=None):
         run_id TEXT PRIMARY KEY,
         annotated_png BLOB NOT NULL,
         thumbnail_png BLOB NOT NULL
+    )''')
+    connection.execute('''CREATE TABLE IF NOT EXISTS recognition_scoring (
+        run_id TEXT PRIMARY KEY,
+        rubric_version TEXT NOT NULL,
+        dimensions TEXT NOT NULL,
+        weights TEXT NOT NULL
+    )''')
+    connection.execute('''CREATE TABLE IF NOT EXISTS recognition_assessment (
+        run_id TEXT PRIMARY KEY,
+        score_json TEXT NOT NULL
     )''')
     connection.commit()
     return connection
@@ -54,6 +65,13 @@ def save_record(run_id, source_type, report, path=None, *, annotated=None):
              report['score']['理由'], '\n'.join(report['sections']['改良建议'])))
         if cursor.rowcount and image_data:
             connection.execute('INSERT INTO recognition_images VALUES (?, ?, ?)', (run_id, *image_data))
+        if cursor.rowcount and report.get('dimensions'):
+            connection.execute('INSERT INTO recognition_scoring VALUES (?, ?, ?, ?)',
+                (run_id, report['rubric_version'], json.dumps(report['dimensions'], ensure_ascii=False),
+                 json.dumps(report['dimension_weights'], ensure_ascii=False)))
+        if cursor.rowcount and report['score'].get('评分版本'):
+            connection.execute('INSERT INTO recognition_assessment VALUES (?, ?)',
+                               (run_id, json.dumps(report['score'], ensure_ascii=False)))
 
 
 def load_record_images(run_ids, path=None, *, full_size=False):
@@ -68,6 +86,39 @@ def load_record_images(run_ids, path=None, *, full_size=False):
 def load_records(path=None):
     with closing(connect(path)) as connection:
         records = [dict(row) for row in connection.execute('SELECT * FROM recognition_history ORDER BY sequence')]
+        scoring = {row['run_id']: dict(row) for row in connection.execute('SELECT * FROM recognition_scoring')}
+        assessments = {row['run_id']: json.loads(row['score_json'])
+                       for row in connection.execute('SELECT * FROM recognition_assessment')}
     for record in records:
         record['defects'] = json.loads(record['defects'])
+        detail = scoring.get(record['run_id'])
+        record['dimensions'] = json.loads(detail['dimensions']) if detail else None
+        record['rubric_version'] = detail['rubric_version'] if detail else None
+        record['dimension_weights'] = json.loads(detail['weights']) if detail else None
+        record['score_type'] = None
+        record['assessment'] = assessments.get(record['run_id'])
+        if record['assessment']:
+            record['score_type'] = record['assessment']['评分类型']
+        elif detail and detail['rubric_version'] in (RUBRIC_VERSION, 'welding-v4-path-points-v4', 'welding-v4-image-points-v3'):
+            record['score_type'] = '无法评分' if record['score'] is None else '外观参考分'
+        elif detail and detail['rubric_version'] == 'welding-v4-raw-points-v2':
+            record['score_type'] = ('无法评分' if record['score'] is None else
+                '外观参考分' if record['dimensions']['接头强度']['得分'] is None else '完整综合分')
     return records
+
+
+def delete_records(run_ids, path=None):
+    """Delete explicitly selected records and their images in one transaction."""
+    selected = tuple(dict.fromkeys(run_ids))
+    if not selected:
+        return 0
+    if any(not isinstance(run_id, str) or not run_id for run_id in selected):
+        raise ValueError('Invalid record identifiers')
+    with closing(connect(path)) as connection, connection:
+        removed = 0
+        for run_id in selected:
+            connection.execute('DELETE FROM recognition_images WHERE run_id = ?', (run_id,))
+            connection.execute('DELETE FROM recognition_scoring WHERE run_id = ?', (run_id,))
+            connection.execute('DELETE FROM recognition_assessment WHERE run_id = ?', (run_id,))
+            removed += connection.execute('DELETE FROM recognition_history WHERE run_id = ?', (run_id,)).rowcount
+    return removed

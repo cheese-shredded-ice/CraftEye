@@ -12,6 +12,7 @@ class TeachingVisualsTest(unittest.TestCase):
         self.assertEqual(matched_references(['未见明显外观缺陷：未发现气孔。', '无法判断：无法确认裂纹。']), [])
         self.assertEqual(matched_references(['疑似焊缝成形不良：未见气孔。', '疑似其他外观异常：表面残留。']), [])
         self.assertEqual(matched_references(['疑似气孔：小孔。', '疑似气孔: 孔洞。']), ['气孔'])
+        self.assertEqual(matched_references(['气孔：表面小孔。', '咬边：边缘凹槽。', '未见裂纹：划痕。']), ['气孔', '咬边'])
 
     def test_nine_reference_images_are_bundled(self):
         self.assertEqual(len(REFERENCES), 9)
@@ -21,14 +22,24 @@ class TeachingVisualsTest(unittest.TestCase):
             self.assertEqual(matched_references([f'疑似{name}：可见依据。']), [name])
 
     def test_score_boundaries_unscorable_and_html_escape(self):
-        for value, color in [(0, '#dc2626'), (59, '#dc2626'), (60, '#b45309'), (79, '#b45309'),
-                             (80, '#15803d'), (100, '#15803d'), (None, '#64748b')]:
-            self.assertEqual(score_band(value)[0], color)
+        for value, label in [(0, '严重不符合'), (59, '严重不符合'), (60, '不符合'), (74, '不符合'),
+                             (75, '需改进'), (84, '需改进'), (85, '符合'), (92, '符合'),
+                             (93, '非常符合'), (100, '非常符合'), (None, '暂无法评分')]:
+            self.assertEqual(score_band(value)[1], label)
+            html = score_html({'分数': value, '理由': '练习参考', '等级': label})
+            if value is None:
+                self.assertNotIn('class="score-marker"', html)
+                self.assertNotIn('aria-valuenow', html)
+            else:
+                self.assertIn(f'aria-valuenow="{value}"', html)
+                self.assertIn('class="score-marker"', html)
+                self.assertIn(f'{label}</span>', html) if value is not None else None
         html = score_html({'分数': None, '理由': '<img src=x onerror=alert(1)>'})
         self.assertIn('暂无法评分', html)
         self.assertIn('data-weld-score="—"', html)
-        self.assertNotIn('<img', html)
-        self.assertIn('&lt;img', html)
+        self.assertNotIn('<img src=x', html)
+        self.assertNotIn('score-outcome', html)
+        self.assertNotIn('教学目标：', html)
 
 
 if __name__ == '__main__':

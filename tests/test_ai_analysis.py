@@ -1,3 +1,5 @@
+import copy
+from scoring import DIMENSIONS
 import base64
 import io
 import json
@@ -29,9 +31,12 @@ class AnalysisTest(unittest.TestCase):
         self.rows = [{'类别': '焊接不良', '置信度': 0.8}]
         self.config = AIConfig('test-secret-not-real')
         self.sections = {'缺陷类型': ['疑似焊缝成形不良：局部宽窄不一致。'],
-                         '本次评分': {'分数': 76, '理由': '焊道较连续，宽窄一致性还需练习。'},
+                         '本次评分': {'理由': '焊道较连续，宽窄一致性还需练习。'},
                          '图中现象': ['局部成形不均匀。'], '可能原因': ['行走速度可能不均，需要核实。'],
                          '改良建议': ['先核对工艺规程，保持行走稳定并试焊复检。']}
+
+        self.sections['六维评分'] = {name: {'分数': value, '理由': '局部需改进。'}
+            for (name, _), value in zip(DIMENSIONS, [16, 16, 12, 15, 11, 6])}
 
     def test_request_contains_both_images_and_context_and_secret_not_exported(self):
         calls = []
@@ -57,8 +62,8 @@ class AnalysisTest(unittest.TestCase):
         self.assertNotIn(self.config.api_key, json.dumps(result))
         self.assertNotIn(self.config.api_key, repr(self.config))
         self.assertTrue(reply.closed)
-        self.assertEqual(result['score']['分数'], 76)
-        self.assertIn('76 / 100 分', report_text(result))
+        self.assertEqual(result['score']['分数'], 73)
+        self.assertIn('73 / 100 分', report_text(result))
         self.assertIn('【本次评分】', report_text(result))
         self.assertIn('分数不是检测置信度', content[0]['text'])
         for title in SECTIONS:
@@ -130,7 +135,7 @@ class AnalysisTest(unittest.TestCase):
         for value in ('不是JSON', '{}', '{"图中现象":[]}', json.dumps({**self.sections, 'extra': 'bad'})):
             with self.assertRaises(AnalysisError):
                 parse_analysis(value)
-        self.assertEqual(parse_analysis('```json\n' + json.dumps(self.sections) + '\n```'), self.sections)
+        self.assertEqual(parse_analysis('```json\n' + json.dumps(self.sections) + '\n```')['本次评分']['分数'], 73)
         reply = Reply({'choices': [{'finish_reason': 'length', 'message': {'content': json.dumps(self.sections)}}]})
         with self.assertRaisesRegex(AnalysisError, '截断'):
             analyze(self.original, self.annotated, [], [], '', self.config, transport=lambda *a, **k: reply)
@@ -146,8 +151,9 @@ class AnalysisTest(unittest.TestCase):
                          'https://space.cn-beijing.maas.aliyuncs.com/compatible-mode/v1/chat/completions')
 
     def test_score_accepts_bounds_and_unscorable_without_faking_zero(self):
-        for value in (0, 59, 60, 79, 80, 100, None):
-            data = {**self.sections, '本次评分': {'分数': value, '理由': '练习参考或需补拍。'}}
+        for value in (0, 100, None):
+            data = copy.deepcopy(self.sections)
+            data['六维评分'] = {name: {'分数': None if value is None else maximum * value // 100, '理由': '练习参考或需补拍。'} for name, maximum in DIMENSIONS}
             result = parse_analysis(json.dumps(data))
             self.assertEqual(result['本次评分']['分数'], value)
         data['缺陷类型'] = ['无法判断：请补拍清晰照片。']
@@ -163,7 +169,31 @@ class AnalysisTest(unittest.TestCase):
                     {'分数': 80, '理由': '测试', 'extra': 1}, ['80']]
         for score in invalid:
             with self.subTest(score=score), self.assertRaises(AnalysisError):
-                parse_analysis(json.dumps({**self.sections, '本次评分': score}))
+                data = copy.deepcopy(self.sections)
+                data['六维评分']['焊道连续性'] = score
+                parse_analysis(json.dumps(data))
+
+    def test_image_only_rubric_and_path_guidance_are_sent_and_exported(self):
+        calls = []
+        def post(url, **kwargs):
+            calls.append(kwargs['json']['messages'][0]['content'][0]['text'])
+            return Reply({'choices': [{'message': {'content': json.dumps(self.sections)}}]})
+        report = analyze(self.original, self.annotated, [], [], '', self.config, transport=post)
+        self.assertEqual(report['score']['分数'], 73)
+        self.assertEqual(report['score']['评分类型'], '短板约束综合分')
+        self.assertIn('焊道走向稳定性', calls[0])
+        self.assertIn('不要求起弧和收弧位置入镜', calls[0])
+        self.assertNotIn('strength_test_data', calls[0])
+        self.assertIn('11 / 15', report_text(report))
+        self.assertNotIn('接头强度', report['dimensions'])
+
+    def test_v4_three_defects_supported_and_raw_points_enforced(self):
+        data = copy.deepcopy(self.sections)
+        data['缺陷类型'] = ['飞溅过多：两侧散落颗粒。', '咬边：下侧可见凹槽。', '疑似气孔：局部小孔。']
+        self.assertEqual(len(parse_analysis(json.dumps(data))['缺陷类型']), 3)
+        data['六维评分']['焊趾过渡']['分数'] = 16
+        with self.assertRaises(AnalysisError):
+            parse_analysis(json.dumps(data))
 
 
 if __name__ == '__main__':

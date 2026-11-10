@@ -48,7 +48,7 @@ def build_advice(class_ids, observations=()):
     elif 1 in detected:
         summary = '当前检出区域被标记为焊接良好，暂不建议仅凭图片改变电流、角度或速度；仍需按工艺要求复核。'
     else:
-        summary = '当前阈值下未检出目标，无法据此判断合格或推荐参数调整。请补拍清晰的焊缝近照后再识别。'
+        summary = '当前阈值下未检出目标，无法据此判断合格或推荐参数调整。'
     # Manual observations narrow the list; generic model labels never select a cause.
     conditions = selected if selected else list(OBSERVATIONS) if abnormal else []
     items = [{'需核实的现象': condition, **OBSERVATIONS[condition]} for condition in conditions]

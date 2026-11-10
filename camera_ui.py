@@ -13,7 +13,7 @@ from camera import CameraProcessor
 from common import MODEL
 from inference import get_runner
 from ai_ui import render_ai_analysis
-from workspace_ui import ai_placeholder, detection_summary
+from workspace_ui import ai_placeholder, detection_summary, section_heading
 
 
 @st.fragment(run_every=1.0)
@@ -83,11 +83,11 @@ def render_live_results(ctx):
 
 
 def render_camera(confidence):
-    workspace, feedback = st.columns([1, 1.8], gap='medium')
+    workspace, feedback = st.columns([1, 2.15], gap='medium')
     with workspace, st.container(key='camera-stage'):
         title, options = st.columns([1, 1])
         with title:
-            st.subheader('实时画面')
+            section_heading('实时画面', 'camera')
         with options, st.popover('现场现象', use_container_width=True):
             st.multiselect('补充摄像头现场现象（可选，人工选择）', list(OBSERVATIONS), key='camera_observations')
         if not MODEL.exists():

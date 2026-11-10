@@ -8,7 +8,7 @@ import unittest
 from unittest.mock import patch
 
 from PIL import Image, ImageDraw
-from recognition_history import load_records, save_record, load_record_images
+from recognition_history import load_records, save_record, load_record_images, delete_records
 
 
 def report(score=76):
@@ -97,6 +97,27 @@ class RecognitionHistoryTest(unittest.TestCase):
         with patch('ai_ui.analyze', return_value=report()), patch('ai_ui.save_record') as save:
             result = analyze_and_record('run', 'camera', original, annotated)
         save.assert_called_once_with('run', 'camera', result, annotated=annotated)
+
+    def test_delete_selected_records_and_images_preserves_others(self):
+        image = Image.new('RGB', (20, 20), 'red')
+        for run_id in ('keep', 'remove', 'legacy'):
+            save_record(run_id, 'image', report(), self.path, annotated=None if run_id == 'legacy' else image)
+        self.assertEqual(delete_records([], self.path), 0)
+        self.assertEqual(delete_records(['remove', 'legacy', 'remove', 'missing'], self.path), 2)
+        self.assertEqual([row['run_id'] for row in load_records(self.path)], ['keep'])
+        self.assertEqual(set(load_record_images(['keep', 'remove'], self.path)), {'keep'})
+        self.assertEqual(delete_records(['remove'], self.path), 0)
+        save_record('new', 'camera', report(), self.path)
+        self.assertGreater(load_records(self.path)[-1]['sequence'], 3)
+
+    def test_delete_failure_rolls_back_images_and_records(self):
+        save_record('keep', 'image', report(), self.path, annotated=Image.new('RGB', (20, 20)))
+        with closing(sqlite3.connect(self.path)) as connection, connection:
+            connection.execute("CREATE TRIGGER reject_delete BEFORE DELETE ON recognition_history BEGIN SELECT RAISE(ABORT, 'test failure'); END")
+        with self.assertRaises(sqlite3.IntegrityError):
+            delete_records(['keep'], self.path)
+        self.assertEqual(len(load_records(self.path)), 1)
+        self.assertIn('keep', load_record_images(['keep'], self.path))
 
 
 if __name__ == '__main__':

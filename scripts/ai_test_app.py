@@ -8,6 +8,7 @@ import time
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
+from scoring import DIMENSIONS
 import ai_analysis
 import ai_ui
 import recognition_history
@@ -40,11 +41,18 @@ def simulated_post(url, **kwargs):
     time.sleep(0.8)
     if kwargs['json']['model'] == 'simulate-401':
         return Reply({'error': 'test-key-not-real must not be displayed'}, status=401)
-    sections = {'本次评分': {'分数': 76, '理由': '模拟：焊道较连续，边缘过渡需练习。'},
-                '缺陷类型': ['疑似气孔：模拟，表面可见小孔。', '疑似咬边：模拟，边缘有凹槽。'],
+    sections = {'本次评分': {'理由': '模拟：焊道较连续，边缘过渡需练习。'},
+                '缺陷类型': ['气孔：模拟，表面可见小孔。', '疑似咬边：模拟，边缘有凹槽。', '飞溅过多：模拟，两侧散落颗粒。'],
                 '图中现象': ['模拟：焊道连续，局部宽窄不一致。'],
                 '可能原因': ['模拟：走枪速度可能不稳定，需观察操作确认。'],
                 '改良建议': ['模拟：下次匀速走枪，比较前中后段宽度。']}
+    sections['六维评分'] = {name: {'分数': value, '理由': '模拟：局部需改进。'}
+                          for (name, _), value in zip(DIMENSIONS, [16, 16, 12, 15, 11, 6])}
+    if kwargs['json']['model'] == 'simulate-crack':
+        # Deliberately inconsistent high marks to verify that evidence gates dominate.
+        sections['缺陷类型'] = ['疑似裂纹：模拟，中心可见线状纹路。']
+        sections['六维评分'] = {name: {'分数': maximum, '理由': '模拟：其他外观整齐。'}
+                               for name, maximum in DIMENSIONS}
     return Reply({'choices': [{'finish_reason': 'stop', 'message': {'content': json.dumps(sections)}}],
                   'usage': {'total_tokens': 100}})
 

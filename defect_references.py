@@ -20,7 +20,7 @@ def matched_references(classifications):
     """Match the declared type only, never incidental or negated words in evidence."""
     matches = []
     for item in classifications:
-        match = re.match(r'^疑似\s*([^：:]+)\s*[：:]', item.strip())
+        match = re.match(r'^(?:疑似\s*)?([^：:]+)\s*[：:]', item.strip())
         if match:
             name = match.group(1).strip()
             if name in REFERENCES and name not in matches:

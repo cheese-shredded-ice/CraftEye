@@ -10,7 +10,7 @@ from PIL import Image, ImageDraw
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from recognition_history import save_record, load_records
+from recognition_history import save_record, load_records, load_record_images
 
 OUTPUT = ROOT / 'outputs/ai-check'
 DB = OUTPUT / 'history-test.sqlite3'
@@ -85,6 +85,53 @@ def main():
                 'score': {'分数': 10, '理由': '模拟新记录'},
                 'sections': {'缺陷类型': ['疑似咬边：凹槽。'], '改良建议': ['模拟：练习匀速。']}}, DB)
             expect(page.locator('.training-trend')).to_contain_text('下降 11.0 分', timeout=15000)
+            page.get_by_role('button', name='删除', exact=True).click()
+            expect(page.get_by_role('button', name='删除所选记录', exact=True)).to_be_disabled()
+            selection = page.locator('[data-testid="stMultiSelect"] input:visible').last
+            for label in ('第12次', '第13次'):
+                selection.fill(label)
+                page.get_by_role('option').filter(has_text=label + ' ·').click()
+            # Selecting and closing the dialog must not delete anything.
+            page.get_by_role('dialog').get_by_role('button', name='Close', exact=True).click()
+            assert len(load_records(DB)) == 13
+            page.get_by_role('button', name='删除', exact=True).click()
+            page.get_by_role('dialog').get_by_text('删除识别记录', exact=True).click()
+            page.get_by_role('button', name='删除所选记录', exact=True).click()
+            page.get_by_role('tab', name='识别记录', exact=True).click()
+            expect(page.locator('.history-stats')).to_contain_text('最新 91', timeout=15000)
+            expect(page.locator('.training-trend')).to_contain_text('上升 15.3 分')
+            assert len(load_records(DB)) == 11
+            assert load_record_images(['history-fixture-11'], DB) == {}
+            assert 'history-fixture-10' in load_record_images(['history-fixture-10'], DB)
+            # Delete the only record on the final page; pagination must move back.
+            page.get_by_role('button', name='下一页', exact=True).click()
+            expect(page.locator('.history-table tbody tr')).to_have_count(1)
+            page.get_by_role('button', name='删除', exact=True).click()
+            selection.fill('第1次')
+            page.get_by_role('option').filter(has_text='第1次 ·').click()
+            page.get_by_role('dialog').get_by_text('删除识别记录', exact=True).click()
+            page.get_by_role('button', name='删除所选记录', exact=True).click()
+            page.get_by_role('tab', name='识别记录', exact=True).click()
+            expect(page.locator('.history-table tbody tr')).to_have_count(5)
+            expect(page.get_by_role('button', name='下一页', exact=True)).to_be_disabled()
+            page.reload()
+            expect(page.locator('[data-test-ready]')).to_be_attached(timeout=60000)
+            page.get_by_role('tab', name='识别记录', exact=True).click()
+            expect(page.locator('.history-table tbody tr').first.locator('td').first).to_have_text('11')
+            # Empty-state after deleting all explicitly selected test records.
+            page.get_by_role('button', name='删除', exact=True).click()
+            for record in load_records(DB):
+                label = f'第{record["sequence"]}次'
+                selection.fill(label)
+                page.get_by_role('option').filter(has_text=label + ' ·').click()
+            page.get_by_role('dialog').get_by_text('删除识别记录', exact=True).click()
+            page.get_by_role('button', name='删除所选记录', exact=True).click()
+            page.get_by_role('tab', name='识别记录', exact=True).click()
+            expect(page.get_by_text('暂无记录', exact=False)).to_be_visible(timeout=15000)
+            expect(page.get_by_text('等待首个有效评分', exact=True)).to_be_visible()
+            expect(page.get_by_role('button', name='删除', exact=True)).to_be_disabled()
+            assert load_records(DB) == []
+            assert load_record_images(['history-fixture-10'], DB) == {}
             assert not errors, errors
             print('History table, pagination, score curve, null/zero scores, CSV export and three desktop sizes: passed.')
         except Exception:

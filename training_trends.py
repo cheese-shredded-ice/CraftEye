@@ -37,7 +37,7 @@ def training_summary(records):
     for record in window:
         names = set()
         for item in record.get('defects', []):
-            match = re.match(r'^疑似\s*([^：:]+)[：:]', item.strip())
+            match = re.match(r'^(?:疑似\s*)?([^：:]+)[：:]', item.strip())
             if match:
                 name = match.group(1).strip()
                 name = {'焊接成形不良': '焊缝成形不良'}.get(name, name)

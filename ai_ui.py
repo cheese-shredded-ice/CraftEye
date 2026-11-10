@@ -13,6 +13,7 @@ from ai_analysis import (AIConfig, AnalysisError, DEFAULT_ENDPOINT, DEFAULT_MODE
                          DEFAULT_LEARNING_GOAL, analysis_identity, analyze, report_text)
 from teaching_report_ui import report_html
 from recognition_history import save_record
+from workspace_ui import section_heading
 
 
 def local_api_key():
@@ -55,6 +56,7 @@ def get_executor():
 
 def analyze_and_record(run_id, namespace, *args, **kwargs):
     report = analyze(*args, **kwargs)
+    report['run_id'] = run_id
     try:
         save_record(run_id, namespace, report, annotated=args[1] if len(args) > 1 else kwargs.get('annotated'))
     except Exception:
@@ -83,8 +85,14 @@ def submit_analysis(namespace, source_id, original, annotated, rows, observation
     return True
 
 
-@st.fragment(run_every=1.0)
 def render_ai_analysis(namespace, source_id, original, annotated, rows, observations):
+    # Only pending work needs a timer. Finished reports remain mounted until input changes.
+    interval = 1.0 if st.session_state.get(f'_ai_job_{namespace}') else None
+    st.fragment(run_every=interval)(_render_ai_analysis)(
+        namespace, source_id, original, annotated, rows, observations)
+
+
+def _render_ai_analysis(namespace, source_id, original, annotated, rows, observations):
     learning_goal = DEFAULT_LEARNING_GOAL
     context = ''
     config = current_config()
@@ -103,17 +111,18 @@ def render_ai_analysis(namespace, source_id, original, annotated, rows, observat
             # Do not expose exception bodies or provider errors containing credentials.
             st.session_state[error_key] = {'identity': job['identity'], 'message': '分析未完成，请稍后重试。'}
         del st.session_state[job_key]
-        job = None
-    title, submit = st.columns([1, 1.35])
+        # Re-register the fragment without a timer, including after failed requests.
+        st.rerun()
+    title, submit = st.columns([1.7, 1])
     with title:
-        st.subheader('综合分析')
+        section_heading('综合分析')
     with submit:
         clicked = st.button('综合分析当前图片', key=f'ai_submit_{namespace}', type='primary',
                             disabled=bool(job) or not config.api_key, use_container_width=True)
     if clicked:
         submit_analysis(namespace, source_id, original, annotated, rows, observations)
-        # Disable the submit button immediately; never resubmit during periodic refreshes.
-        st.rerun(scope='fragment')
+        # Re-register with a timer and disable submission while the job is pending.
+        st.rerun()
     if job:
         if job['identity'] == identity:
             st.info('正在分析当前图片，请稍候…')
@@ -129,9 +138,15 @@ def render_ai_analysis(namespace, source_id, original, annotated, rows, observat
         report = completed['report']
         if report.get('history_save_error'):
             st.warning('本次结果已生成，但识别记录保存失败，请先下载报告。')
-        st.html(report_html(report, original))
+        view_key = f'ai_view_{namespace}'
+        view = st.session_state.get(view_key, '六维评分')
+        st.html(report_html(report, original, view))
+        controls, downloads = st.columns([1.35, 1])
+        with controls:
+            st.radio('评价视图', ['六维评分', '改进建议'], horizontal=True,
+                     label_visibility='collapsed', key=view_key)
         download_id = identity + report['generated_at']
-        with st.popover('下载分析报告'):
+        with downloads, st.popover('下载分析报告'):
             st.download_button('保存分析结果（TXT）', report_text(report), 'welding-analysis.txt', 'text/plain',
                                key=f'ai_txt_{namespace}_{download_id}', on_click='ignore')
             st.download_button('保存完整分析报告（JSON）',

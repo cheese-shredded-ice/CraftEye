@@ -1,25 +1,41 @@
-"""Accessible score ring; the numeric value is validated by the AI parser."""
-from html import escape
+"""Five-band score scale; values are derived from the fixed weighted rubric."""
+from dashboard_visuals import svg_url
 
 
-def score_band(value):
-    if value is None:
-        return '#64748b', '暂无法评分'
-    if value < 60:
-        return '#dc2626', '重点练习'
-    if value < 80:
-        return '#b45309', '继续巩固'
-    return '#15803d', '保持并提升'
+from scoring import score_band, decision_style, scale_position
 
 
 def score_html(score):
     value = score['分数']
-    color, label = score_band(value)
+    color, label = decision_style(score)
+    position = scale_position(value)
     number = '—' if value is None else str(value)
-    progress = 0 if value is None else value
     accessible = '暂无法评分' if value is None else f'本次评分 {value} 分，满分 100 分，{label}'
-    return f'''<div data-weld-score="{number}" style="display:flex;align-items:center;gap:22px;flex-wrap:wrap;padding:12px 0 18px">
-<div role="img" aria-label="{accessible}" data-score-ring="{progress}" style="width:108px;height:108px;flex-shrink:0;border-radius:50%;background:conic-gradient({color} 0% {progress}%,#e2e8f0 {progress}% 100%);mask:radial-gradient(farthest-side,transparent calc(100% - 10px),#000 calc(100% - 9px))"></div>
-<div style="flex:1;min-width:190px"><div class="score-line"><span class="score-label">【本次评分】</span> <strong style="font-size:36px;color:{color}">{number}</strong>
-<span style="font-size:16px"> / 100 分</span><span style="margin-left:16px;color:{color};font-weight:600">{label}</span></div>
-<div style="margin-top:5px">{escape(score['理由'])}</div></div></div>'''
+    marker = '' if value is None else f'<span class="score-marker" style="left:{position}%;background:{color}"></span>'
+    # Progress tiers are visual references; the verdict above still uses all teaching gates.
+    progress_grades = ('严重不符合', '不符合', '需改进', '符合', '非常符合')
+    labels = ''.join(f'<span class="score-grade" title="进度档位；是否达标以上方判定为准">'
+                     f'{grade}<small>（{index*20}–{100 if index == 4 else index*20+19}）</small></span>'
+                     for index, grade in enumerate(progress_grades))
+    def number_text(key):
+        return '—' if score.get(key) is None else str(score[key])
+    deduction = number_text('短板惩罚')
+    if score.get('短板惩罚'):
+        deduction = '−' + deduction
+    breakdown = ('<div class="score-breakdown">'
+                 f'<span>基础分 <b>{number_text("基础分")}</b></span>'
+                 f'<span>短板惩罚 <b>{deduction}</b></span>'
+                 f'<span>最终分 <b>{number}</b></span></div>')
+    meter = (f'role="meter" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{value}" '
+             f'aria-valuetext="{value}分，{label}"') if value is not None else 'role="img"'
+    progress = 0 if value is None else value
+    gauge = svg_url(f'<defs><linearGradient id="g"><stop stop-color="{color}"/><stop offset="1" stop-color="{color}" stop-opacity="0.65"/></linearGradient></defs>'
+                    f'<path d="M 30 162 A 90 90 0 1 1 210 162" stroke="#deedf8" stroke-width="16" pathLength="100"/>'
+                    f'<path d="M 30 162 A 90 90 0 1 1 210 162" stroke="url(#g)" stroke-width="16" pathLength="100" stroke-dasharray="{progress} 100"/>', '0 0 240 200')
+    return f'''<div class="score-summary" data-weld-score="{number}">
+<div class="score-gauge" aria-label="{accessible}"><img src="{gauge}" alt="" aria-hidden="true">
+<div class="gauge-value"><div><strong style="color:{color}">{number}</strong><b style="color:{color}">分</b></div><small>最终分 / 100</small></div></div>
+<div class="score-detail"><div class="score-scale{" unscored" if value is None else ""}" data-score-progress="{number}" {meter} aria-label="{accessible}">
+<div class="score-status-row"><span class="score-status" style="background:{color};left:clamp(60px,{position}%,calc(100% - 60px))">{label}</span></div>
+<div class="score-track">{marker}</div><div class="score-grades">{labels}</div></div>
+{breakdown}</div></div>'''

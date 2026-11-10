@@ -10,21 +10,22 @@ from common import ROOT, DATASET, MODEL, CLASS_NAMES, CHINESE_NAMES
 from advice import OBSERVATIONS
 from inference import draw_boxes, infer
 from ai_ui import render_ai_settings, render_ai_analysis, submit_analysis
-from workspace_ui import install_layout, detection_summary, ai_placeholder
+from workspace_ui import install_layout, detection_summary, ai_placeholder, render_brand, section_heading
 
-st.set_page_config(page_title='匠眼·慧焊 数智评鉴系统', page_icon='🔎', layout='wide', initial_sidebar_state='collapsed')
+st.set_page_config(page_title='数智评鉴系统', page_icon='🔎', layout='wide', initial_sidebar_state='collapsed')
 install_layout()
-title, settings = st.columns([8, 2])
-with title:
-    st.title('匠眼·慧焊 数智评鉴系统')
-with settings:
-    with st.popover('设置', use_container_width=True):
-        if MODEL.exists():
-            st.success('本地模型已就绪')
-        else:
-            st.warning('模型尚未下载；请先运行安装环境.bat。')
-        confidence = st.slider('检测置信度阈值', 0.05, 0.95, 0.25, 0.05)
-        render_ai_settings()
+with st.container(key='dashboard-header'):
+    title, settings = st.columns([8, 2])
+    with title:
+        render_brand()
+    with settings:
+        with st.popover('设置', use_container_width=True):
+            if MODEL.exists():
+                st.success('本地模型已就绪')
+            else:
+                st.warning('模型尚未下载；请先运行安装环境.bat。')
+            confidence = st.slider('检测置信度阈值', 0.05, 0.95, 0.25, 0.05)
+            render_ai_settings()
 
 SHOW_REFERENCE_TABS = False
 tab_names = ['图片识别', '摄像头实时识别', '识别记录']
@@ -35,15 +36,16 @@ detect_tab, camera_tab = tabs[:2]
 history_tab = tabs[2]
 
 with detect_tab:
-    workspace, feedback = st.columns([1, 1.8], gap='medium')
+    workspace, feedback = st.columns([1, 2.15], gap='medium')
     with workspace, st.container(key='image-stage'):
+        section_heading('焊接图片识别', 'image')
         choose, observe = st.columns(2)
-        with choose, st.popover('选择图片', use_container_width=True):
+        with choose, st.container(key='choose-image'), st.popover('选择图片', use_container_width=True):
             upload = st.file_uploader('上传一张焊接图片', type=['jpg', 'jpeg', 'png', 'bmp', 'webp'])
             samples = sorted((DATASET / 'test' / 'images').glob('*.jpg'))
             sample = st.selectbox('或选用测试集图片', samples, format_func=lambda p: p.name, index=None, placeholder='选择示例图片')
         source = upload if upload is not None else sample
-        with observe, st.popover('现场现象', use_container_width=True):
+        with observe, st.container(key='observe-image'), st.popover('现场现象', use_container_width=True):
             observations = st.multiselect('补充现场现象（可选，人工选择）', list(OBSERVATIONS), key='image_observations')
         detect, export = st.columns(2)
         with detect:
@@ -65,7 +67,7 @@ with detect_tab:
                 candidate = st.session_state.get('detection')
                 if candidate and candidate['fingerprint'] == fingerprint:
                     detection = candidate
-                with export, st.popover('下载结果', disabled=detection is None, use_container_width=True):
+                with export, st.container(key='export-image'), st.popover('下载结果', disabled=detection is None, use_container_width=True):
                     if detection:
                         output = io.BytesIO()
                         detection['image'].save(output, format='PNG')
