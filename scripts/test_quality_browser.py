@@ -30,8 +30,8 @@ def main():
             expect(page.get_by_role('button', name='开始识别', exact=True)).to_be_enabled(timeout=30000)
             page.get_by_role('heading', name='数智评鉴系统', exact=True).click()
             page.get_by_role('button', name='开始识别', exact=True).click()
-            expect(page.locator('.score-status')).to_have_text('非常符合', timeout=60000)
-            expect(page.locator('[data-weld-score="100"]')).to_be_visible()
+            expect(page.locator('.score-status')).to_have_text('一般', timeout=60000)
+            expect(page.locator('[data-weld-score="59"]')).to_be_visible()
             expect(page.get_by_role('button', name='检测复核', exact=True)).to_have_count(0)
             expect(page.locator('.score-outcome')).to_have_count(0)
             for width, height in [(1280, 720), (1366, 768), (1920, 1080)]:
@@ -44,12 +44,37 @@ def main():
                 page.get_by_role('button', name='保存完整分析报告（JSON）', exact=True).click()
             download.value.save_as(OUTPUT/'quality-direct.json')
             report = json.loads((OUTPUT/'quality-direct.json').read_text(encoding='utf-8'))['analysis']
-            assert report['score']['等级'] == '非常符合'
+            assert report['score']['等级'] == '不符合'
             assert '检测依据' not in report['score']
+            assert report['score']['关键缺陷扣分'] == 41
+            expect(page.locator('.score-cap-note')).to_contain_text('最高59分')
+            expect(page.locator('.score-cap-note')).to_contain_text('裂纹风险：不符合')
+            assert all(item['分数'] == 100 for item in report['dimensions'].values())
             assert report['sections']['缺陷类型'][0].startswith('疑似裂纹')
             with closing(sqlite3.connect(OUTPUT/'history-test.sqlite3')) as db:
                 row = db.execute('SELECT score_json FROM recognition_assessment WHERE run_id=?', (report['run_id'],)).fetchone()
                 assert json.loads(row[0]) == report['score']
+            page.get_by_role('heading', name='数智评鉴系统', exact=True).click()
+            page.get_by_role('button', name='设置', exact=True).click()
+            page.get_by_label('视觉模型', exact=True).fill('simulate-partial')
+            page.get_by_label('视觉模型', exact=True).press('Tab')
+            page.get_by_role('heading', name='数智评鉴系统', exact=True).click()
+            page.get_by_role('button', name='开始识别', exact=True).click()
+            expect(page.locator('.score-status')).to_have_text('非常符合', timeout=60000)
+            expect(page.locator('.gauge-value small')).to_have_text('可见项参考分 / 100')
+            expect(page.locator('[data-weld-score="90"]')).to_be_visible()
+            expect(page.locator('.dimension-formula')).to_contain_text('4/6项 · 覆盖75%')
+            page.get_by_role('button', name='下载分析报告', exact=True).click()
+            with page.expect_download() as partial_download:
+                page.get_by_role('button', name='保存完整分析报告（JSON）', exact=True).click()
+            partial_download.value.save_as(OUTPUT/'quality-partial.json')
+            partial = json.loads((OUTPUT/'quality-partial.json').read_text(encoding='utf-8'))['analysis']
+            assert partial['score']['分数'] == 90 and not partial['score']['达标']
+            assert partial['score']['等级'] == '可见项参考分'
+            assert partial['dimensions']['焊趾过渡']['得分'] is None
+            with closing(sqlite3.connect(OUTPUT/'history-test.sqlite3')) as db:
+                row = db.execute('SELECT score_json FROM recognition_assessment WHERE run_id=?', (partial['run_id'],)).fetchone()
+                assert json.loads(row[0]) == partial['score']
             assert not errors, errors
             print('Direct appearance grade, removed review controls, preserved defect text, export and persistence: passed.')
         except Exception:

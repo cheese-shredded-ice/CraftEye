@@ -7,8 +7,8 @@ import math
 
 from ai_analysis import SECTIONS
 from defect_references import REFERENCES, REFERENCE_DIR, matched_references
-from score_ui import score_html, score_band
-from scoring import DIMENSIONS, SCORE_FORMULA
+from score_ui import score_html
+from scoring import DIMENSIONS, SCORE_FORMULA, score_band
 from dashboard_visuals import icon_html
 
 
@@ -25,7 +25,6 @@ def dimensions_html(dimensions=None, formula=None):
     for level in (20, 40, 60, 80, 100):
         points = coordinates([point(index, level) for index in range(6)])
         parts.append(f'<polygon points="{points}" fill="none" stroke="#cbd5e1" stroke-width="1.5"/>')
-        parts.append(f'<text x="407" y="{cy-radius*level/100+5:.1f}" fill="#64748b" font-size="14">{level}</text>')
     for index in range(6):
         x, y = point(index)
         parts.append(f'<line x1="{cx}" y1="{cy}" x2="{x:.2f}" y2="{y:.2f}" stroke="#94a3b8" stroke-width="1.5"/>')
@@ -96,7 +95,11 @@ def report_html(report, original, view='改进建议'):
     parts = [f'<div class="teaching-report{density}">', score_html(report['score'])]
     if view == '六维评分':
         formula = (SCORE_FORMULA if report['score']['分数'] is not None
-                   else '部分项目无评分，暂不计算总分')
+                   else '可评项目不足，暂不计算总分')
+        if report['score'].get('评分类型') == '可见项参考分':
+            formula = f'可见项参考分 · {report["score"]["可评维度数"]}/6项 · 覆盖{report["score"]["可评权重"]}%'
+        if report['score'].get('关键缺陷'):
+            formula = '关键缺陷限分 · 最终分最高59分'
         parts.append('<div class="radar-card">' + dimensions_html(report.get('dimensions'), formula) + '</div></div>')
         return ''.join(parts)
     names = matched_references(sections['缺陷类型'])[:2]

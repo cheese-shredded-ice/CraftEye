@@ -3,7 +3,8 @@ import unittest
 from PIL import Image
 
 from defect_references import REFERENCES, REFERENCE_DIR, matched_references
-from score_ui import score_band, score_html
+from score_ui import score_html
+from scoring import score_band, progress_band
 
 
 class TeachingVisualsTest(unittest.TestCase):
@@ -26,6 +27,10 @@ class TeachingVisualsTest(unittest.TestCase):
                              (75, '需改进'), (84, '需改进'), (85, '符合'), (92, '符合'),
                              (93, '非常符合'), (100, '非常符合'), (None, '暂无法评分')]:
             self.assertEqual(score_band(value)[1], label)
+        for value, label in [(0, '严重不符合'), (19, '严重不符合'), (20, '不符合'), (39, '不符合'),
+                             (40, '一般'), (59, '一般'), (60, '符合'), (79, '符合'),
+                             (80, '非常符合'), (100, '非常符合'), (None, '暂无法评分')]:
+            self.assertEqual(progress_band(value)[1], label)
             html = score_html({'分数': value, '理由': '练习参考', '等级': label})
             if value is None:
                 self.assertNotIn('class="score-marker"', html)
@@ -40,6 +45,14 @@ class TeachingVisualsTest(unittest.TestCase):
         self.assertNotIn('<img src=x', html)
         self.assertNotIn('score-outcome', html)
         self.assertNotIn('教学目标：', html)
+
+    def test_critical_decision_does_not_replace_numeric_progress_tier(self):
+        score = {'分数': 59, '等级': '不符合', '关键缺陷': [{'类型': '裂纹'}],
+                 '分数上限': 59, '关键缺陷扣分': 22}
+        html = score_html(score)
+        self.assertIn('aria-valuetext="59分，一般"', html)
+        self.assertIn('裂纹风险：不符合', html)
+        self.assertEqual(score['等级'], '不符合')
 
 
 if __name__ == '__main__':

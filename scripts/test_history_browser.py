@@ -39,6 +39,7 @@ def main():
             expect(page.locator('.history-table tbody tr').first.locator('td').first).to_have_text('12')
             expect(page.get_by_role('columnheader', name='检测图片')).to_be_visible()
             expect(page.locator('.history-thumbnail')).to_have_count(5)
+            expect(page.locator('.st-key-history-row-actions button')).to_have_count(5)
             expect(page.locator('[data-testid="stVegaLiteChart"]')).to_be_visible(timeout=15000)
             expect(page.get_by_text('训练趋势总结', exact=True)).to_be_visible()
             expect(page.locator('.training-trend')).to_contain_text('上升 18.3 分')
@@ -64,6 +65,15 @@ def main():
                 }''')
                 assert 40 < dimensions['gap'] < 125, dimensions
                 assert dimensions['valid']
+                aligned = page.evaluate("""() => {
+                    const rows = [...document.querySelectorAll('.history-table tbody tr')];
+                    const buttons = [...document.querySelectorAll('.st-key-history-row-actions button')];
+                    return rows.every((row, i) => {
+                        const r = row.getBoundingClientRect(), b = buttons[i].getBoundingClientRect();
+                        return Math.abs((r.top+r.bottom)/2 - (b.top+b.bottom)/2) < 3;
+                    });
+                }""")
+                assert aligned, 'Row delete buttons must align with their records'
                 page.screenshot(path=str(OUTPUT / f'history-{width}x{height}.png'))
             page.get_by_role('button', name='下一页', exact=True).click()
             expect(page.locator('.history-table tbody tr').first.locator('td').first).to_have_text('7')
@@ -85,7 +95,7 @@ def main():
                 'score': {'分数': 10, '理由': '模拟新记录'},
                 'sections': {'缺陷类型': ['疑似咬边：凹槽。'], '改良建议': ['模拟：练习匀速。']}}, DB)
             expect(page.locator('.training-trend')).to_contain_text('下降 11.0 分', timeout=15000)
-            page.get_by_role('button', name='删除', exact=True).click()
+            page.locator('.st-key-history_bulk_delete button').click()
             expect(page.get_by_role('button', name='删除所选记录', exact=True)).to_be_disabled()
             selection = page.locator('[data-testid="stMultiSelect"] input:visible').last
             for label in ('第12次', '第13次'):
@@ -93,8 +103,13 @@ def main():
                 page.get_by_role('option').filter(has_text=label + ' ·').click()
             # Selecting and closing the dialog must not delete anything.
             page.get_by_role('dialog').get_by_role('button', name='Close', exact=True).click()
+            expect(page.get_by_role('dialog')).not_to_be_visible()
+            page.wait_for_timeout(500)
             assert len(load_records(DB)) == 13
-            page.get_by_role('button', name='删除', exact=True).click()
+            page.locator('.st-key-history_bulk_delete button').click()
+            for label in ('第12次', '第13次'):
+                selection.fill(label)
+                page.get_by_role('option').filter(has_text=label + ' ·').click()
             page.get_by_role('dialog').get_by_text('删除识别记录', exact=True).click()
             page.get_by_role('button', name='删除所选记录', exact=True).click()
             page.get_by_role('tab', name='识别记录', exact=True).click()
@@ -106,12 +121,7 @@ def main():
             # Delete the only record on the final page; pagination must move back.
             page.get_by_role('button', name='下一页', exact=True).click()
             expect(page.locator('.history-table tbody tr')).to_have_count(1)
-            page.get_by_role('button', name='删除', exact=True).click()
-            selection.fill('第1次')
-            page.get_by_role('option').filter(has_text='第1次 ·').click()
-            page.get_by_role('dialog').get_by_text('删除识别记录', exact=True).click()
-            page.get_by_role('button', name='删除所选记录', exact=True).click()
-            page.get_by_role('tab', name='识别记录', exact=True).click()
+            page.locator('.st-key-history_row_delete_history-fixture-0 button').click()
             expect(page.locator('.history-table tbody tr')).to_have_count(5)
             expect(page.get_by_role('button', name='下一页', exact=True)).to_be_disabled()
             page.reload()
@@ -119,7 +129,7 @@ def main():
             page.get_by_role('tab', name='识别记录', exact=True).click()
             expect(page.locator('.history-table tbody tr').first.locator('td').first).to_have_text('11')
             # Empty-state after deleting all explicitly selected test records.
-            page.get_by_role('button', name='删除', exact=True).click()
+            page.locator('.st-key-history_bulk_delete button').click()
             for record in load_records(DB):
                 label = f'第{record["sequence"]}次'
                 selection.fill(label)
@@ -129,7 +139,7 @@ def main():
             page.get_by_role('tab', name='识别记录', exact=True).click()
             expect(page.get_by_text('暂无记录', exact=False)).to_be_visible(timeout=15000)
             expect(page.get_by_text('等待首个有效评分', exact=True)).to_be_visible()
-            expect(page.get_by_role('button', name='删除', exact=True)).to_be_disabled()
+            expect(page.locator('.st-key-history_bulk_delete button')).to_be_disabled()
             assert load_records(DB) == []
             assert load_record_images(['history-fixture-10'], DB) == {}
             assert not errors, errors

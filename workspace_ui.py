@@ -12,7 +12,9 @@ def install_layout():
     root = Path(__file__).parent
     banner = base64.b64encode((root / 'assets/dashboard/welding-banner.webp').read_bytes()).decode()
     icons = ''.join(f'--icon-{name}:url({icon_url(name)});' for name in ('image', 'camera', 'record', 'analysis', 'play', 'download', 'person'))
-    st.html('<style>:root{--dashboard-banner:url(data:image/webp;base64,' + banner + ');' + icons + '}'
+    # Style-only st.html uses Streamlit's shared event container, where a fragment
+    # can overwrite it. Anchor the stylesheet in the main tree instead.
+    st.html('<span data-workspace-style hidden></span><style>:root{--dashboard-banner:url(data:image/webp;base64,' + banner + ');' + icons + '}'
             + root.joinpath('workspace.css').read_text(encoding='utf-8') + '</style>')
 
 

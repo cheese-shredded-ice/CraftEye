@@ -16,6 +16,17 @@ from scoring import decision_style
 PAGE_SIZE = 5
 
 
+def delete_history_record(run_id):
+    """Delete the clicked record by stable ID, even if pagination changes."""
+    try:
+        count = delete_records([run_id])
+    except Exception:
+        st.session_state['_history_row_error'] = '删除失败，请重试。'
+    else:
+        st.session_state['_history_delete_reset'] = True
+        st.toast('已删除该记录' if count else '该记录已删除')
+
+
 def display_time(value):
     try:
         return datetime.fromisoformat(value).strftime('%m-%d %H:%M')
@@ -31,7 +42,8 @@ def export_csv(records):
     output = io.StringIO(newline='')
     writer = csv.writer(output)
     writer.writerow(['序号', '识别时间', '来源', '分数', '缺陷类型', '评分理由', '改良建议', '评分类型',
-                     '基础分', '短板惩罚', '最终分', '等级', '是否达到教学目标', '判定依据', '评分版本'])
+                     '基础分', '短板惩罚', '最终分', '等级', '是否达到教学目标', '判定依据', '评分版本',
+                     '限分前得分', '关键缺陷扣分', '关键缺陷依据'])
     for record in records:
         values = [record['sequence'], record['generated_at'], '摄像头' if record['source_type'] == 'camera' else '图片',
                   record['score'] if record['score'] is not None else '暂无法评分',
@@ -39,11 +51,17 @@ def export_csv(records):
         assessment = record.get('assessment') or {}
         values.extend(assessment.get(key, '') for key in ('基础分', '短板惩罚', '最终分', '等级', '是否达到教学目标'))
         values.extend(['；'.join(assessment.get('判定依据', [])), record.get('rubric_version') or '历史规则'])
+        values.extend([assessment.get('限分前得分', ''), assessment.get('关键缺陷扣分', ''),
+                       '；'.join(item['类型'] + '：' + item['依据'] for item in assessment.get('关键缺陷', []))])
         writer.writerow(["'" + value if isinstance(value, str) and value.startswith(('=', '+', '-', '@')) else value for value in values])
     return output.getvalue().encode('utf-8-sig')
 
 
-@st.dialog('删除识别记录')
+def close_history_dialog():
+    st.session_state['_history_delete_open'] = False
+
+
+@st.dialog('删除识别记录', on_dismiss=close_history_dialog)
 def delete_history_dialog():
     records = load_records()
     lookup = {record['run_id']: record for record in records}
@@ -63,12 +81,20 @@ def delete_history_dialog():
             st.error('删除失败，记录已保留，请重试。')
         else:
             st.session_state['_history_delete_reset'] = True
+            close_history_dialog()
             st.toast(f'已删除 {count} 条记录')
             st.rerun()
 
 
-@st.fragment(run_every=2.0)
 def render_history():
+    # Pause history polling while a dialog is open so it cannot dismiss the form.
+    opened = st.session_state.get('_history_delete_open', False)
+    st.fragment(run_every=None if opened else 2.0)(_render_history)()
+    if opened:
+        delete_history_dialog()
+
+
+def _render_history():
     try:
         records = load_records()
     except Exception:
@@ -84,8 +110,11 @@ def render_history():
         with download:
             st.download_button('导出记录', export_csv(records), '识别记录.csv', 'text/csv', disabled=not records, on_click='ignore')
         with remove:
-            if st.button('删除', disabled=not records, use_container_width=True):
-                delete_history_dialog()
+            if st.button('删除', key='history_bulk_delete', disabled=not records, use_container_width=True):
+                st.session_state['_history_delete_open'] = True
+                st.rerun()
+        if message := st.session_state.pop('_history_row_error', None):
+            st.error(message)
         if not records:
             st.html('<div class="history-empty">暂无记录<br>完成一次综合分析后自动保存</div>')
         else:
@@ -106,7 +135,19 @@ def render_history():
                            if image_data else '<span class="history-no-image">暂无图片</span>')
                 rows.append(f'<tr><td title="{escape(record["generated_at"], quote=True)} · {source}">{record["sequence"]}</td><td>{picture}</td>'
                             f'<td>{escape(defect_label(record["defects"]))}</td><td style="color:{color}" title="{escape(score_description, quote=True)}"><b>{score_text}</b><small>{label}</small></td></tr>')
-            st.html(f'<table class="history-table" style="--history-rows:{len(visible)}"><thead><tr><th>序号</th><th>检测图片</th><th>缺陷类型</th><th>评分</th></tr></thead><tbody>' + ''.join(rows) + '</tbody></table>')
+            with st.container(key='history-grid'):
+                table, actions = st.columns([.86, .14], gap='small')
+                with table:
+                    # Keep local styles inside the fragment's HTML element, not the
+                    # shared event container used for style-only st.html calls.
+                    st.html(f'<style>.st-key-history-grid {{ --history-rows:{len(visible)}; }}</style>'
+                            f'<table class="history-table" style="--history-rows:{len(visible)}"><thead><tr><th>序号</th><th>检测图片</th><th>缺陷类型</th><th>评分</th></tr></thead><tbody>' + ''.join(rows) + '</tbody></table>')
+                with actions, st.container(key='history-row-actions'):
+                    st.html('<div class="history-action-heading">操作</div>')
+                    for record in visible:
+                        st.button('删除', key=f'history_row_delete_{record["run_id"]}',
+                                  on_click=delete_history_record, args=(record['run_id'],),
+                                  use_container_width=True)
             previous, status, following = st.columns([1, 1.4, 1])
             with previous:
                 if st.button('上一页', disabled=page <= 1, key='history_previous'):

@@ -40,8 +40,8 @@ class SixScoringTest(unittest.TestCase):
     def test_unobservable_path_does_not_become_zero_or_rescaled_total(self):
         self.dimensions['焊道走向稳定性'] = {'分数': None, '理由': '焊道过于模糊，需补拍'}
         result = parse_analysis(json.dumps(self.payload))
-        self.assertIsNone(result['本次评分']['分数'])
-        self.assertEqual(result['本次评分']['评分类型'], '无法评分')
+        self.assertEqual(result['本次评分']['分数'], 73)
+        self.assertEqual(result['本次评分']['评分类型'], '可见项参考分')
         self.assertEqual(result['六维评分']['成形质量']['得分'], 16)
         self.assertIsNone(result['六维评分']['焊道走向稳定性']['分数'])
         html = dimensions_html(result['六维评分'])

@@ -50,9 +50,12 @@ def simulated_post(url, **kwargs):
                           for (name, _), value in zip(DIMENSIONS, [16, 16, 12, 15, 11, 6])}
     if kwargs['json']['model'] == 'simulate-crack':
         # Deliberately inconsistent high marks to verify that evidence gates dominate.
-        sections['缺陷类型'] = ['疑似裂纹：模拟，中心可见线状纹路。']
+        sections['缺陷类型'] = ['疑似裂纹：中心可见线状开口（模拟）。']
         sections['六维评分'] = {name: {'分数': maximum, '理由': '模拟：其他外观整齐。'}
                                for name, maximum in DIMENSIONS}
+    if kwargs['json']['model'] == 'simulate-partial':
+        sections['六维评分'] = {name: {'分数': value, '理由': '模拟：部分区域可见。' if value is not None else '模拟：遮挡区域无法辨别。'}
+                               for (name, _), value in zip(DIMENSIONS, [18, 19, None, 17, 14, None])}
     return Reply({'choices': [{'finish_reason': 'stop', 'message': {'content': json.dumps(sections)}}],
                   'usage': {'total_tokens': 100}})
 

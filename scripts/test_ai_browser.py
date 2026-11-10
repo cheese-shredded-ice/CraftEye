@@ -123,7 +123,7 @@ def main():
             expect(page.get_by_text('气孔 · 典型示例', exact=True)).to_be_visible()
             expect(page.get_by_text('咬边 · 典型示例', exact=True)).to_be_visible()
             expect(page.locator('[data-score-progress="73"]')).to_be_visible()
-            expect(page.locator('.score-status')).to_have_text('不符合')
+            expect(page.locator('.score-status')).to_have_text('符合')
             expect(page.locator('.score-grade.active')).to_have_count(0)
             assert page.locator('.score-marker').evaluate('(el) => el.style.left') == '73%'
             expect(page.get_by_role('meter')).to_have_attribute('aria-valuenow', '73')

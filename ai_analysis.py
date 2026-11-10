@@ -19,7 +19,7 @@ DEFAULT_ENDPOINT = 'https://dashscope.aliyuncs.com/compatible-mode/v1'
 DEFAULT_MODEL = 'qwen3-vl-plus'
 SECTIONS = ('缺陷类型', '图中现象', '可能原因', '改良建议')
 DEFAULT_LEARNING_GOAL = '基础成形：焊道连续、宽窄基本一致'
-FEEDBACK_VERSION = 'student-v7-appearance-direct-v13'
+FEEDBACK_VERSION = 'student-v9-critical-cap-v16'
 DEFECT_TYPES = ('气孔', '夹渣', '裂纹', '未焊透', '未熔合', '咬边', '焊瘤', '烧穿', '弧坑',
                 '飞溅过多', '焊缝成形不良')
 
@@ -82,6 +82,7 @@ def make_payload(original, annotated, rows, observations, context, model, learni
     regions = focus_regions(rows, original.size)
     prompt = Path(__file__).with_name('prompts').joinpath('welding_v4.md').read_text(encoding='utf-8')
     data = {'detections': rows, 'manual_observations': list(observations),
+            'detection_confidence_usage': '仅辅助定位与选择裁图，不是质量分、合格概率或扣分依据',
             'user_supplied_process_context': context, 'learning_goal': learning_goal,
             'candidate_defect_types': list(DEFECT_TYPES),
             'focus_confidence_threshold': FOCUS_CONFIDENCE,
@@ -92,7 +93,7 @@ def make_payload(original, annotated, rows, observations, context, model, learni
                {'type': 'text', 'text': '图1：原始图片（未绘制检测框）'}]
     for label, image in [('original', original), ('annotated', annotated)]:
         if label == 'annotated':
-            content.append({'type': 'text', 'text': '图2：本地模型检测框参考（框和文字不是缺陷）'})
+            content.append({'type': 'text', 'text': '图2：本地模型检测框参考（框和文字不是缺陷；百分比仅为检测置信度，不是评分）'})
         encoded = base64.b64encode(image_bytes(image)).decode('ascii')
         content.append({'type': 'image_url', 'image_url': {'url': 'data:image/jpeg;base64,' + encoded}})
     for index, region in enumerate(regions[:MAX_FOCUS_CROPS], 3):
@@ -136,7 +137,7 @@ def parse_analysis(value):
         raise AnalysisError('分析服务未按简短教学反馈格式返回，请重试。')
     try:
         result['六维评分'], calculated = evaluate_quality(
-            result['六维评分'])
+            result['六维评分'], result['缺陷类型'], result['图中现象'])
     except ValueError as exc:
         raise AnalysisError(str(exc)) from None
     score.update(calculated)
@@ -204,6 +205,9 @@ def report_text(report):
             lines.append(f'{key}：{score[key] if score[key] is not None else "—"}')
         lines.append('；'.join(score['判定依据']))
         lines.append('评价范围：' + score.get('评价范围', '历史评价'))
+        if score.get('关键缺陷'):
+            lines.append(f'限分前得分：{score["限分前得分"]}；关键缺陷扣分：{score["关键缺陷扣分"]}；上限：{score["分数上限"]}')
+            lines.extend(f'关键缺陷：{item["类型"]}；{item["依据"]}（{item["性质"]}）' for item in score['关键缺陷'])
     if report.get('dimensions'):
         lines.append('【六维评分】')
         for name, weight in report.get('dimension_weights', dict(DIMENSIONS)).items():
@@ -213,9 +217,11 @@ def report_text(report):
             number = '—' if raw is None else f'{raw} / {maximum}'
             radar = 'null' if item['分数'] is None else str(item['分数'])
             lines.append(f'{name} | 权重{weight}% | {number} | 雷达值{radar} | {item["理由"]}')
-        lines.extend(['基础分A = 六项原始得分之和；最低项M = 最低标准化得分；'
+        lines.extend(['六项完整时基础分A = 六项原始得分之和；缺项时至少4项且覆盖权重≥60%，'
+                      '基础分A = 可评项原始得分之和 / 可评项满分之和 × 100，仅作为可见项参考分；'
+                      '最低项M = 可评项最低标准化得分；'
                       f'{SCORE_FORMULA}，按四舍五入取整。'
-                      f'任一项无评分时不计算总分。符合需S≥{PASS_SCORE}、所有单项≥{PASS_MINIMUM}，'
+                      f'可评项目不足时不计算总分。完整六项符合需S≥{PASS_SCORE}、所有单项≥{PASS_MINIMUM}，'
                       f'非常符合需S≥{EXCELLENT_SCORE}、所有单项≥{EXCELLENT_MINIMUM}，'
                       '结论仅针对六维外观教学目标。', ''])
     for section in SECTIONS:
