@@ -1,5 +1,6 @@
 """Evidence gates, teacher review and exported state; mock API on port 8502 only."""
 import json
+import os
 from pathlib import Path
 import sqlite3
 from contextlib import closing
@@ -17,7 +18,7 @@ def main():
         errors = []
         page.on('pageerror', lambda error: errors.append(str(error)))
         try:
-            page.goto('http://127.0.0.1:8502', wait_until='domcontentloaded')
+            page.goto(os.environ.get('CRAFTEYE_TEST_URL','http://127.0.0.1:8502'), wait_until='domcontentloaded')
             expect(page.locator('[data-test-ready]')).to_be_attached(timeout=60000)
             page.get_by_role('button', name='设置', exact=True).click()
             page.get_by_label('API Key', exact=True).fill('test-key-not-real')

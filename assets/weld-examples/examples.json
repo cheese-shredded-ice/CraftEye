@@ -1,0 +1,142 @@
+[
+  {
+    "id": "uniform",
+    "label": "均匀鱼鳞纹",
+    "file": "uniform.jpg",
+    "source": "dataset/train/images/good-tig-welds_7_jpeg.rf.36712f7ce52a64331a573ec3b8844596.jpg",
+    "sha256": "fb58c3974c9823abf47f22af7f86b6d29a000f7adc13bc1024d6624e8bedbe7f"
+  },
+  {
+    "id": "pipe",
+    "label": "管件焊缝",
+    "file": "pipe.jpg",
+    "source": "dataset/train/images/Good-Welding-images_23_jpeg.rf.0f0798f99db2bdada3c1adb557cb95dc.jpg",
+    "sha256": "dfa8586a1a6e8855cac7f8d74d707ec93361801b6544d24eefa4597617384171"
+  },
+  {
+    "id": "crack",
+    "label": "线状开裂",
+    "file": "crack.jpg",
+    "source": "dataset/train/images/1723687d-6dd44d6e-Centerline-Crack_jpg.rf.72a00c17f1e4daa3ad151e1a88a9e394.jpg",
+    "sha256": "88b3f41e7bb47338f004020ccf9d99faf2fd78630d0709d55237e7a42fa66448"
+  },
+  {
+    "id": "porosity",
+    "label": "表面孔洞",
+    "file": "porosity.jpg",
+    "source": "dataset/train/images/porosity-worm-hole-weld-defect-welding-process-flux-cored-arc-fcaw-204492534_jpeg.rf.8f8f4faf6bd0f9b420f6cdc55f2606a9.jpg",
+    "sha256": "ef4d66c735c98de2f24168b7d2e3f56219461ef785550fa1dc971f6df1ea547f"
+  },
+  {
+    "id": "spatter",
+    "label": "飞溅颗粒",
+    "file": "spatter.jpg",
+    "source": "dataset/train/images/Spatters-welding-images_27_jpeg.rf.7252c0142f0d74a5c07e9b2c9818e24a.jpg",
+    "sha256": "d5ff2a7b1eb2f8a64b7cca85892da017d5d295f14cd692d5eee0cad201233b36"
+  },
+  {
+    "id": "irregular",
+    "label": "成形不均",
+    "file": "irregular.jpg",
+    "source": "dataset/train/images/poor-Welding-Images_9_jpeg.rf.54c34e2337a26875eb8f14751c39f65b.jpg",
+    "sha256": "703a0f021cf71eab6986fa728200e5de8f5b4e6005237510faf223de60ebdf5d"
+  },
+  {
+    "id": "speed",
+    "label": "焊道宽窄对比",
+    "file": "speed.jpg",
+    "source": "dataset/train/images/poor-Welding-Images_22_jpeg.rf.b7f3fdea1e120871ee1ecec58406855f.jpg",
+    "sha256": "7ba963a575d61e5be4ff10320d6037f5acd7cba753368c7c88c5c0418f7bd3ea"
+  },
+  {
+    "id": "burn-through",
+    "label": "烧穿孔洞",
+    "file": "burn-through.jpg",
+    "source": "dataset/train/images/Burn-welding-images_25_jpeg.rf.28a49eb4f32ee11906d3e25b4a5fa957.jpg",
+    "sha256": "45f0ed18882e49e8ae91982f423ebd246b9555d2f44c7cd85034f4bb0ee04b31"
+  },
+  {
+    "id": "plate",
+    "label": "平板焊道",
+    "file": "plate.jpg",
+    "source": "dataset/test/images/good-stick-welds_38_jpeg_jpg.rf.a798a6f14879da205dac297a653d167f.jpg",
+    "sha256": "a5c626a67ba4df5b0f5c67f93385d642540d043a9bb87d81fcb01805fa5465e0"
+  },
+  {
+    "id": "tee",
+    "label": "管板角接",
+    "file": "tee.jpg",
+    "source": "dataset/test/images/good-tig-welds_3_jpeg.rf.c6afd4c75c9f0f8866e1d58bb2a2ae0d.jpg",
+    "sha256": "c2a0b8e17b583f57824a44f2dfecdb474f6c7bb0c9f0cf53cb1ae48917108378"
+  },
+  {
+    "id": "angle",
+    "label": "直线角焊缝",
+    "file": "angle.jpg",
+    "source": "dataset/test/images/Good-Welding-images_11_jpeg.rf.4807e1282a383cba87b1e2e3c77ca9ce.jpg",
+    "sha256": "a57d4e8615c3c87e0cd6b522fd84a21e4e39e55265907b8cd49589a7a4160f1b"
+  },
+  {
+    "id": "corner",
+    "label": "内角焊缝",
+    "file": "corner.jpg",
+    "source": "dataset/test/images/good_weld_vid1199_jpeg.rf.9d57a01453bae20900fa6b90909f299b.jpg",
+    "sha256": "7bbe4cd5f39d8f32b35fe24b0b727c1739525e407a37e6005c12052459d1b8ca"
+  },
+  {
+    "id": "multi-pass",
+    "label": "多层多道焊缝",
+    "file": "multi-pass.jpg",
+    "source": "dataset/test/images/good_weld_vid2024_jpeg.rf.a402255ca379799ef7f83f76286bb761.jpg",
+    "sha256": "2e667f50993e547885f777fab2c4b6486b6182008d08ebd8e9244a12a0a7ff13"
+  },
+  {
+    "id": "cylinder",
+    "label": "筒体环缝",
+    "file": "cylinder.jpg",
+    "source": "dataset/test/images/good_weld_vid571_jpeg.rf.538c3e8d94cd30d4bfa03e6af6be320c.jpg",
+    "sha256": "483bb1a0d4ae08ba829918d265b43f252db9fdbb4168787b255f2304d34903cb"
+  },
+  {
+    "id": "mig-corner",
+    "label": "转角焊缝",
+    "file": "mig-corner.jpg",
+    "source": "dataset/test/images/mig-good-welds_5_jpeg.rf.34d691732b9aaf7d94f3fcdaa144fdba.jpg",
+    "sha256": "136b3ff9dfb128622f38e8828e112aeb9d77c79402e20f72247455662e6816a6"
+  },
+  {
+    "id": "uneven",
+    "label": "不均匀焊道",
+    "file": "uneven.jpg",
+    "source": "dataset/test/images/poor-Welding-Images_8_jpeg_jpg.rf.b9316d294ddc2466e9565069260103d0.jpg",
+    "sha256": "4ec1c62282673b5ac3a608ccb359bab5e81837460eaad23f9dd1402d3930cf71"
+  },
+  {
+    "id": "pipe-ring",
+    "label": "管件环向焊缝",
+    "file": "pipe-ring.jpg",
+    "source": "dataset/train/images/Good-Welding-images_8_jpeg.rf.5ab2b4d5b732fe6eaed4c6fbdb3b042e.jpg",
+    "sha256": "312d30f85f00ff98cc5dddda8d5b43aeff783c827870ecc0d95011ec12054b49"
+  },
+  {
+    "id": "colored-pipe",
+    "label": "管件表面色带",
+    "file": "colored-pipe.jpg",
+    "source": "dataset/train/images/good-tig-welds_14_jpeg.rf.39e1bbeb0ef9157d9a8f268f45fe30cd.jpg",
+    "sha256": "c5e4d163f9fcf4516b015cf9ad45bed67b6c0476498e107e818686f3e5909662"
+  },
+  {
+    "id": "groove",
+    "label": "焊道沟槽",
+    "file": "groove.jpg",
+    "source": "dataset/train/images/Slag-inclusion-welding-images_12_jpeg.rf.999c524c342abfe266419a43d3eb98e5.jpg",
+    "sha256": "1aa4462a7aea5c9134afc2deb49f586933f63a8bd7abc4d56e9e92d5a4971561"
+  },
+  {
+    "id": "rough",
+    "label": "粗糙焊道与颗粒",
+    "file": "rough.jpg",
+    "source": "dataset/train/images/Slag-inclusion-welding-images_13_jpeg.rf.d43fc1b241523ed5aa8ed92050941e93.jpg",
+    "sha256": "5a9270bd3b56ced7995c6439739d68a4b120ab5fa3822b1369c2f617d4209a73"
+  }
+]

@@ -8,7 +8,7 @@ import unittest
 from unittest.mock import patch
 
 from PIL import Image, ImageDraw
-from recognition_history import load_records, save_record, load_record_images, delete_records
+from recognition_history import load_records, save_record, load_record_images, delete_records, load_picker_records, load_picker_image
 
 
 def report(score=76):
@@ -54,7 +54,7 @@ class RecognitionHistoryTest(unittest.TestCase):
         from ai_ui import analyze_and_record
         with patch('ai_ui.analyze', return_value=report()), patch('ai_ui.save_record') as save:
             result = analyze_and_record('run', 'camera', 'input')
-        save.assert_called_once_with('run', 'camera', result, annotated=None)
+        save.assert_called_once_with('run', 'camera', result, annotated=None, original='input')
         with patch('ai_ui.analyze', side_effect=RuntimeError('failed')), patch('ai_ui.save_record') as save:
             with self.assertRaises(RuntimeError):
                 analyze_and_record('failed', 'image')
@@ -96,7 +96,24 @@ class RecognitionHistoryTest(unittest.TestCase):
         annotated = Image.new('RGB', (30, 30), 'red')
         with patch('ai_ui.analyze', return_value=report()), patch('ai_ui.save_record') as save:
             result = analyze_and_record('run', 'camera', original, annotated)
-        save.assert_called_once_with('run', 'camera', result, annotated=annotated)
+        save.assert_called_once_with('run', 'camera', result, annotated=annotated, original=original)
+
+    def test_picker_prefers_original_and_preserves_legacy_image(self):
+        original=Image.new('RGB',(25,40),'gray')
+        annotated=Image.new('RGB',(25,40),'red')
+        save_record('old','image',report(),self.path,annotated=annotated)
+        save_record('new','image',report(),self.path,annotated=annotated,original=original)
+        save_record('no-image','image',report(),self.path)
+        rows=load_picker_records(self.path)
+        self.assertEqual([r['run_id'] for r in rows],['new','old'])
+        self.assertEqual([r['has_original'] for r in rows],[1,0])
+        for key,image in [('new',original),('old',annotated)]:
+            self.assertEqual(Image.open(io.BytesIO(load_picker_image(key,self.path))).tobytes(),image.tobytes())
+        self.assertEqual(Image.open(io.BytesIO(load_record_images(['new'],self.path,full_size=True)['new'])).tobytes(),annotated.tobytes())
+        delete_records(['new'],self.path)
+        self.assertIsNone(load_picker_image('new',self.path))
+        with closing(sqlite3.connect(self.path)) as connection:
+            self.assertEqual(connection.execute('SELECT COUNT(*) FROM recognition_originals').fetchone()[0],0)
 
     def test_delete_selected_records_and_images_preserves_others(self):
         image = Image.new('RGB', (20, 20), 'red')

@@ -7,6 +7,8 @@ os.environ.setdefault('YOLO_CONFIG_DIR', str(ROOT / '.ultralytics'))
 os.environ.setdefault('YOLO_AUTOINSTALL', 'false')
 DATASET = ROOT / 'dataset'
 MODEL = ROOT / 'models' / 'welding.pt'
+if not MODEL.exists() and (ROOT / 'models' / 'welding.onnx').exists():
+    MODEL = ROOT / 'models' / 'welding.onnx'
 CLASS_NAMES = ['Bad Weld', 'Good Weld', 'Defect']
 CHINESE_NAMES = ['焊接不良', '焊接良好', '缺陷']
 COLORS = ['#ef4444', '#16a34a', '#f59e0b']

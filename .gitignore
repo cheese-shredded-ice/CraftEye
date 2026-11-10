@@ -4,6 +4,7 @@
 __pycache__/
 dataset/
 models/*.pt
+models/*.onnx
 runs/
 logs/
 data.local.yaml

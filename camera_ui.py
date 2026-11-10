@@ -12,7 +12,7 @@ from advice import OBSERVATIONS
 from camera import CameraProcessor
 from common import MODEL
 from inference import get_runner
-from ai_ui import render_ai_analysis
+from ai_ui import render_ai_analysis, submit_analysis
 from workspace_ui import ai_placeholder, detection_summary, section_heading
 
 
@@ -41,13 +41,15 @@ def render_live_results(ctx):
     with take:
         if paused:
             clicked = False
-            if st.button('重新拍摄', key='resume_camera', type='primary', use_container_width=True):
+            if st.button('重新拍摄', key='resume_camera', type='primary',
+                         disabled=bool(st.session_state.get('_ai_job_camera')), use_container_width=True):
                 st.session_state['_camera_paused'] = False
                 st.session_state['_camera_start_requested'] = True
                 st.session_state.pop('camera_capture', None)
                 st.rerun()
         else:
-            clicked = st.button('截取当前结果', disabled=not fresh, key='capture_camera_result', use_container_width=True)
+            clicked = st.button('截取当前结果', disabled=not fresh or bool(st.session_state.get('_ai_job_camera')),
+                                key='capture_camera_result', use_container_width=True)
     if clicked:
         output, original_output = io.BytesIO(), io.BytesIO()
         result.image.save(output, format='PNG')
@@ -61,6 +63,9 @@ def render_live_results(ctx):
         # Keep the WebRTC component mounted long enough to close its media tracks.
         st.session_state['_camera_paused'] = True
         st.session_state['_camera_start_requested'] = False
+        capture = st.session_state['camera_capture']
+        submit_analysis('camera', capture['id'], result.original, result.image,
+                        capture['report']['detections'], capture['report']['manual_observations'])
         st.rerun()
     with preview, st.popover('快照与下载', disabled=not capture, use_container_width=True):
         if capture:
@@ -118,7 +123,7 @@ def render_camera(confidence):
             render_ai_analysis('camera', capture['id'], Image.open(io.BytesIO(capture['original_png'])).convert('RGB'),
                 Image.open(io.BytesIO(capture['png'])).convert('RGB'), capture['report']['detections'], capture['report'].get('manual_observations', []))
         else:
-            ai_placeholder('截取当前画面后，即可生成评分与教学建议。')
+            ai_placeholder('截取当前画面后，自动生成评分与教学建议。')
 
 
 def camera_stream(confidence, runner, desired):

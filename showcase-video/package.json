@@ -1,0 +1,8 @@
+{
+  "name": "crafteye-showcase",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {"studio": "remotion studio src/index.ts --port=3000 --no-open", "check": "tsc --noEmit"},
+  "dependencies": {"remotion": "4.0.542", "@remotion/cli": "4.0.542", "@remotion/media": "4.0.542", "react": "19.2.0", "react-dom": "19.2.0"},
+  "devDependencies": {"typescript": "5.9.3", "@types/react": "19.2.2", "@types/react-dom": "19.2.2"}
+}

@@ -30,6 +30,10 @@ def connect(path=None):
         annotated_png BLOB NOT NULL,
         thumbnail_png BLOB NOT NULL
     )''')
+    connection.execute('''CREATE TABLE IF NOT EXISTS recognition_originals (
+        run_id TEXT PRIMARY KEY,
+        original_png BLOB NOT NULL
+    )''')
     connection.execute('''CREATE TABLE IF NOT EXISTS recognition_scoring (
         run_id TEXT PRIMARY KEY,
         rubric_version TEXT NOT NULL,
@@ -44,7 +48,7 @@ def connect(path=None):
     return connection
 
 
-def save_record(run_id, source_type, report, path=None, *, annotated=None):
+def save_record(run_id, source_type, report, path=None, *, annotated=None, original=None):
     score = report['score']['分数']
     if score is not None and (type(score) is not int or not 0 <= score <= 100):
         raise ValueError('Invalid score')
@@ -65,6 +69,10 @@ def save_record(run_id, source_type, report, path=None, *, annotated=None):
              report['score']['理由'], '\n'.join(report['sections']['改良建议'])))
         if cursor.rowcount and image_data:
             connection.execute('INSERT INTO recognition_images VALUES (?, ?, ?)', (run_id, *image_data))
+        if cursor.rowcount and original is not None:
+            buffer = io.BytesIO()
+            original.convert('RGB').save(buffer, format='PNG')
+            connection.execute('INSERT INTO recognition_originals VALUES (?, ?)', (run_id, buffer.getvalue()))
         if cursor.rowcount and report.get('dimensions'):
             connection.execute('INSERT INTO recognition_scoring VALUES (?, ?, ?, ?)',
                 (run_id, report['rubric_version'], json.dumps(report['dimensions'], ensure_ascii=False),
@@ -72,6 +80,28 @@ def save_record(run_id, source_type, report, path=None, *, annotated=None):
         if cursor.rowcount and report['score'].get('评分版本'):
             connection.execute('INSERT INTO recognition_assessment VALUES (?, ?)',
                                (run_id, json.dumps(report['score'], ensure_ascii=False)))
+
+
+def load_picker_records(path=None):
+    """List only records with images, without loading image blobs or full reports."""
+    with closing(connect(path)) as connection:
+        return [dict(row) for row in connection.execute('''
+            SELECT h.run_id, h.sequence, h.generated_at, h.defects,
+                   (o.run_id IS NOT NULL) AS has_original
+            FROM recognition_history h
+            JOIN recognition_images i ON i.run_id=h.run_id
+            LEFT JOIN recognition_originals o ON o.run_id=h.run_id
+            ORDER BY h.sequence DESC LIMIT 50''')]
+
+
+def load_picker_image(run_id, path=None):
+    with closing(connect(path)) as connection:
+        row = connection.execute('''SELECT COALESCE(o.original_png,i.annotated_png) AS image
+            FROM recognition_history h
+            JOIN recognition_images i ON i.run_id=h.run_id
+            LEFT JOIN recognition_originals o ON o.run_id=h.run_id
+            WHERE h.run_id=?''', (run_id,)).fetchone()
+        return row['image'] if row else None
 
 
 def load_record_images(run_ids, path=None, *, full_size=False):
@@ -118,6 +148,7 @@ def delete_records(run_ids, path=None):
         removed = 0
         for run_id in selected:
             connection.execute('DELETE FROM recognition_images WHERE run_id = ?', (run_id,))
+            connection.execute('DELETE FROM recognition_originals WHERE run_id = ?', (run_id,))
             connection.execute('DELETE FROM recognition_scoring WHERE run_id = ?', (run_id,))
             connection.execute('DELETE FROM recognition_assessment WHERE run_id = ?', (run_id,))
             removed += connection.execute('DELETE FROM recognition_history WHERE run_id = ?', (run_id,)).rowcount

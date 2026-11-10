@@ -28,16 +28,29 @@ def draw_boxes(image, boxes):
 
 class ModelRunner:
     def __init__(self, path):
+        self.lock = threading.Lock()
+        self.onnx = str(path).lower().endswith('.onnx')
+        if self.onnx:
+            from onnx_backend import ONNXDetector
+            self.model = ONNXDetector(path)
+            self.device = 'cpu'
+            return
         import torch
         from ultralytics import YOLO
         torch.set_num_threads(4)
         self.model = YOLO(path)
         self.device = 0 if torch.cuda.is_available() else 'cpu'
-        self.lock = threading.Lock()
 
     def infer(self, image, confidence):
         # Ultralytics caches mutable predictor state; serialize uploads and streams.
         with self.lock:
+            if self.onnx:
+                boxes = self.model.detect(image, confidence)
+                rows = [{'类别': CHINESE_NAMES[cls], '置信度': round(score, 4),
+                         '左': round(coords[0]), '上': round(coords[1]),
+                         '右': round(coords[2]), '下': round(coords[3])}
+                        for cls, coords, score in boxes]
+                return draw_boxes(image, boxes), rows
             result = self.model.predict(image, conf=confidence, imgsz=640,
                                         device=self.device, verbose=False)[0]
             boxes, rows = [], []

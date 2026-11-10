@@ -1,0 +1,4 @@
+# Developer-only conversion dependencies. Recipients install nothing.
+-r ../../requirements-dev.txt
+onnx==1.19.1
+onnxruntime==1.24.3

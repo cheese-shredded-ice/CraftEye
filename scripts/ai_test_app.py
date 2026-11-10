@@ -7,14 +7,17 @@ import sys
 import time
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT))
+APP_ROOT = Path(os.environ.get('CRAFTEYE_TEST_APP_ROOT', str(ROOT))).resolve()
+TEST_OUTPUT = ROOT / 'outputs/ai-check'
+TEST_OUTPUT.mkdir(parents=True, exist_ok=True)
+sys.path.insert(0, str(APP_ROOT))
 from scoring import DIMENSIONS
 import ai_analysis
 import ai_ui
 import recognition_history
 import streamlit as st
 
-recognition_history.HISTORY_DB = ROOT / 'outputs/ai-check/history-test.sqlite3'
+recognition_history.HISTORY_DB = TEST_OUTPUT / 'history-test.sqlite3'
 
 
 class Reply:
@@ -36,7 +39,7 @@ def simulated_post(url, **kwargs):
     assert all(item.startswith('data:image/jpeg;base64,') for item in images)
     record = {'images': len(images), 'focus_crops': len(images) - 2, 'distinct_images': images[0] != images[1],
               'model': kwargs['json']['model'], 'simulated': True}
-    with (ROOT / 'outputs/ai-check/requests.jsonl').open('a', encoding='utf-8') as output:
+    with (TEST_OUTPUT / 'requests.jsonl').open('a', encoding='utf-8') as output:
         output.write(json.dumps(record) + '\n')
     time.sleep(0.8)
     if kwargs['json']['model'] == 'simulate-401':
@@ -67,6 +70,6 @@ def simulated_analysis(*args, **kwargs):
 ai_ui.analyze = simulated_analysis
 ai_ui.local_api_key = lambda: ''
 os.environ.pop('DASHSCOPE_API_KEY', None)
-exec(compile((ROOT / 'app.py').read_text(encoding='utf-8'), str(ROOT / 'app.py'), 'exec'))
+exec(compile((APP_ROOT / 'app.py').read_text(encoding='utf-8'), str(APP_ROOT / 'app.py'), 'exec'))
 st.html('<style>[data-testid="stElementContainer"]:has([data-test-ready]){display:none}</style>'
         '<span data-test-ready="true" style="display:none"></span>')

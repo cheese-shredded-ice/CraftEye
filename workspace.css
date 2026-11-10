@@ -126,6 +126,18 @@ h1,h3 { padding:0 !important;margin:0 !important; }
 [data-testid="stAlert"] p { font-size:18px; }
 /* Keep settings, image selection and delete dialogs readable independently of the canvas. */
 [data-baseweb="popover"] { max-height:85dvh;overflow:auto; }
+.image-library-preview { margin:8px 0 0;padding:10px;border:1px solid #c5e5ee;border-radius:14px;background:#eff8fc; }
+.image-library-preview img { display:block;width:100%;height:clamp(140px,26vh,250px);object-fit:contain;border-radius:8px; }
+.image-library-preview figcaption { margin-top:7px;font-size:16px;line-height:1.35;color:#256375;overflow-wrap:anywhere; }
+[data-baseweb="popover"]:has(.st-key-image-gallery) { width:min(520px,calc(100vw - 40px));max-height:90dvh; }
+.st-key-image-gallery [data-testid="stButton"] button:has(img) { padding:5px;min-height:112px;height:112px;border-radius:12px;overflow:hidden; }
+.st-key-image-gallery [data-testid="stButton"] button:has(img)::before { display:none; }
+.st-key-image-gallery [data-testid="stButton"] button:has(img) p { width:100%;margin:0;line-height:0; }
+.st-key-image-gallery [data-testid="stButton"] button img { display:block;width:100%;height:98px;max-height:none;object-fit:contain;border-radius:7px; }
+.st-key-image-gallery [data-testid="stButton"] button:has(img)[kind="primary"] { border:3px solid #00a89f;background:#dcfff7; }
+.st-key-image-gallery [data-testid="stButton"] button:not(:has(img)) { min-height:34px;padding:3px 6px; }
+.st-key-image-gallery [data-testid="stButton"] button:not(:has(img)) p { font-size:16px; }
+.st-key-image-gallery { overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#65bdbb #edf7fa; }
 @media (max-height:800px) {
  :root { --header-height:78px;--panel-height:calc(100dvh - 155px);--report-height:calc(100dvh - 300px); }
  [data-testid="stVerticalBlock"] { gap:7px; }

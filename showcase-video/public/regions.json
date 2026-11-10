@@ -1,0 +1,76 @@
+{
+  "crack": {
+    ".score-summary": {
+      "x": 638.359375,
+      "y": 251.5,
+      "width": 1249.640625,
+      "height": 215
+    },
+    ".st-key-image-stage": {
+      "x": 16,
+      "y": 173,
+      "width": 592.359375,
+      "height": 828.6875
+    },
+    ".st-key-image-ai": {
+      "x": 622.359375,
+      "y": 173,
+      "width": 1281.640625,
+      "height": 886.09375
+    }
+  },
+  "advice": {
+    ".score-summary": {
+      "x": 638.359375,
+      "y": 251.5,
+      "width": 1249.640625,
+      "height": 215
+    },
+    ".st-key-image-stage": {
+      "x": 16,
+      "y": 173,
+      "width": 592.359375,
+      "height": 828.6875
+    },
+    ".st-key-image-ai": {
+      "x": 622.359375,
+      "y": 173,
+      "width": 1281.640625,
+      "height": 886.09375
+    }
+  },
+  "excellent": {
+    ".score-summary": {
+      "x": 638.359375,
+      "y": 251.5,
+      "width": 1249.640625,
+      "height": 215
+    },
+    ".st-key-image-stage": {
+      "x": 16,
+      "y": 173,
+      "width": 592.359375,
+      "height": 828.6875
+    },
+    ".st-key-image-ai": {
+      "x": 622.359375,
+      "y": 173,
+      "width": 1281.640625,
+      "height": 886.09375
+    }
+  },
+  "history": {
+    ".st-key-history-table": {
+      "x": 16,
+      "y": 173,
+      "width": 895.953125,
+      "height": 891.875
+    },
+    ".st-key-history-growth": {
+      "x": 925.953125,
+      "y": 173,
+      "width": 978.046875,
+      "height": 871.6875
+    }
+  }
+}

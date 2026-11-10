@@ -58,7 +58,9 @@ def analyze_and_record(run_id, namespace, *args, **kwargs):
     report = analyze(*args, **kwargs)
     report['run_id'] = run_id
     try:
-        save_record(run_id, namespace, report, annotated=args[1] if len(args) > 1 else kwargs.get('annotated'))
+        save_record(run_id, namespace, report,
+                    annotated=args[1] if len(args) > 1 else kwargs.get('annotated'),
+                    original=args[0] if args else kwargs.get('original'))
     except Exception:
         # Keep a successful report usable even when local storage is unavailable.
         report['history_save_error'] = True

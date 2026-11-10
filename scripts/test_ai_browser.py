@@ -1,5 +1,6 @@
 """Browser integration against ai_test_app.py on port 8502 with fake API/camera."""
 import json
+import os
 from pathlib import Path
 
 import cv2
@@ -85,7 +86,7 @@ def main():
         errors = []
         page.on('pageerror', lambda e: errors.append(str(e)))
         try:
-            page.goto('http://127.0.0.1:8502', wait_until='domcontentloaded')
+            page.goto(os.environ.get('CRAFTEYE_TEST_URL','http://127.0.0.1:8502'), wait_until='domcontentloaded')
             expect(page.locator('[data-test-ready]')).to_be_attached(timeout=60000)
             page.get_by_role('tab', name='识别记录', exact=True).click()
             expect(page.get_by_text('暂无记录', exact=False)).to_be_visible()
@@ -93,7 +94,7 @@ def main():
             page.get_by_role('button', name='选择图片', exact=True).click()
             page.get_by_test_id('stFileUploader').locator('input[type=file]').set_input_files(str(sample))
             expect(page.get_by_role('button', name='开始识别', exact=True)).to_be_enabled(timeout=30000)
-            page.get_by_role('heading', name='数智评鉴系统', exact=True).click()
+            page.mouse.click(900, 35)  # Close popovers outside their expanded preview area.
             page.get_by_role('button', name='开始识别', exact=True).click(timeout=60000)
             expect(page.locator('button:visible').filter(has_text='综合分析当前图片').last).to_be_disabled(timeout=30000)
             page.get_by_role('button', name='设置', exact=True).click()
@@ -101,7 +102,7 @@ def main():
             key = page.get_by_label('API Key', exact=True)
             key.fill('test-key-not-real')
             key.press('Tab')
-            page.get_by_role('heading', name='数智评鉴系统', exact=True).click()
+            page.mouse.click(900, 35)  # Close popovers outside their expanded preview area.
             button = page.locator('button:visible').filter(has_text='综合分析当前图片').last
             expect(button).to_be_enabled(timeout=30000)
             assert len((OUTPUT/'requests.jsonl').read_text().splitlines()) == 0
@@ -144,7 +145,7 @@ def main():
                 page.get_by_role('button', name='保存完整分析报告（JSON）', exact=True).click()
             download.value.save_as(OUTPUT/'image-ai-report.json')
             report = json.loads((OUTPUT/'image-ai-report.json').read_text(encoding='utf-8'))
-            page.get_by_role('heading', name='数智评鉴系统', exact=True).click()
+            page.mouse.click(900, 35)  # Close popovers outside their expanded preview area.
             assert report['inputs']['source_type']=='image'
             assert report['analysis']['sections']['缺陷类型']
             assert report['analysis']['score']['分数'] == 73
@@ -172,7 +173,7 @@ def main():
             field = page.get_by_label('视觉模型', exact=True)
             field.fill('simulate-401')
             field.press('Tab')
-            page.get_by_role('heading', name='数智评鉴系统', exact=True).click()
+            page.mouse.click(900, 35)  # Close popovers outside their expanded preview area.
             expect(page.get_by_text('图片、现场现象或模型配置已变化，请点击按钮重新分析当前输入。')).to_be_visible(timeout=10000)
             expect(page.get_by_text('【图中现象】', exact=True)).not_to_be_visible()
             page.get_by_role('button', name='开始识别', exact=True).click()
@@ -184,14 +185,14 @@ def main():
             page.close()
             page = context.new_page()
             page.on('pageerror', lambda e: errors.append(str(e)))
-            page.goto('http://127.0.0.1:8502', wait_until='domcontentloaded')
+            page.goto(os.environ.get('CRAFTEYE_TEST_URL','http://127.0.0.1:8502'), wait_until='domcontentloaded')
             expect(page.locator('[data-test-ready]')).to_be_attached(timeout=60000)
             page.get_by_role('button', name='设置', exact=True).click()
             page.get_by_text('分析设置', exact=True).click()
             page.get_by_label('API Key', exact=True).fill('test-key-not-real')
             page.get_by_label('API Key', exact=True).press('Tab')
             expect(page.get_by_text('密钥已配置，调用权限将在分析时验证。')).to_be_visible(timeout=30000)
-            page.get_by_role('heading', name='数智评鉴系统', exact=True).click()
+            page.mouse.click(900, 35)  # Close popovers outside their expanded preview area.
             page.get_by_role('tab',name='摄像头实时识别',exact=True).click()
             iframe = page.frame_locator('iframe[title*="webrtc_streamer"]')
             iframe.get_by_role('button',name='开始实时识别',exact=True).click()
@@ -199,11 +200,11 @@ def main():
             expect(capture).to_be_enabled(timeout=60000)
             capture.click()
             expect(page.get_by_text('画面已暂停 · 摄像头已关闭', exact=True)).to_be_visible(timeout=30000)
-            expect(page.locator('button:visible').filter(has_text='综合分析当前图片').last).to_be_enabled(timeout=30000)
-            page.locator('button:visible').filter(has_text='综合分析当前图片').last.click()
             expect(page.locator('.st-key-camera-ai .radar-image')).to_be_visible(timeout=30000)
             page.wait_for_timeout(1000)
             expect(page.locator('[data-weld-score="73"]')).to_be_visible()
+            page.wait_for_timeout(2500)
+            assert len((OUTPUT/'requests.jsonl').read_text().splitlines()) == 4, 'Each camera capture must submit exactly once.'
             for width, height in ((1366, 768), (1280, 720), (1920, 1080)):
                 page.set_viewport_size({'width':width,'height':height})
                 page.wait_for_timeout(200)
@@ -223,7 +224,7 @@ def main():
             with page.expect_download() as download:
                 page.get_by_role('button',name='保存完整分析报告（JSON）',exact=True).click()
             download.value.save_as(OUTPUT/'camera-ai-report.json')
-            page.get_by_role('heading', name='数智评鉴系统', exact=True).click()
+            page.mouse.click(900, 35)  # Close popovers outside their expanded preview area.
             report = json.loads((OUTPUT/'camera-ai-report.json').read_text(encoding='utf-8'))
             assert report['inputs']['source_type']=='camera'
             assert report['analysis']['score']['分数'] == 73
