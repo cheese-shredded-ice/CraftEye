@@ -11,18 +11,25 @@ def draw_boxes(image, boxes):
     canvas = image.copy()
     draw = ImageDraw.Draw(canvas)
     try:
-        font = ImageFont.truetype('C:/Windows/Fonts/msyh.ttc', max(14, image.width // 45))
+        # The annotated image is also used in the presentation view, so keep the
+        # class name readable at a distance.  Detection confidence remains in
+        # ``rows`` for filtering and reports; it is intentionally omitted from
+        # the visual label to keep the overlay concise.
+        font = ImageFont.truetype('C:/Windows/Fonts/msyh.ttc', max(40, image.width // 16))
     except OSError:
         font = ImageFont.load_default()
+    padding = max(3, image.width // 320)
     for cls, coords, confidence in boxes:
         color = COLORS[cls]
         draw.rectangle(coords, outline=color, width=max(2, image.width // 200))
-        label = CHINESE_NAMES[cls] + (f' {confidence:.0%}' if confidence is not None else '')
+        label = CHINESE_NAMES[cls]
         x, y = coords[:2]
-        y = max(0, y - 24)
-        rect = draw.textbbox((x, y), label, font=font)
+        text_box = draw.textbbox((x + padding, 0), label, font=font)
+        label_height = text_box[3] - text_box[1]
+        label_y = max(0, y - label_height - padding * 2)
+        rect = draw.textbbox((x + padding, label_y + padding), label, font=font)
         draw.rectangle(rect, fill=color)
-        draw.text((x, y), label, fill='white', font=font)
+        draw.text((x + padding, label_y + padding), label, fill='white', font=font)
     return canvas
 
 
