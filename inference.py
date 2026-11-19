@@ -15,7 +15,9 @@ def draw_boxes(image, boxes):
         # class name readable at a distance.  Detection confidence remains in
         # ``rows`` for filtering and reports; it is intentionally omitted from
         # the visual label to keep the overlay concise.
-        font = ImageFont.truetype('C:/Windows/Fonts/msyh.ttc', max(40, image.width // 16))
+        # The result image is fit to the workbench column in the browser. Use a
+        # large source label so the class name remains readable after that fit.
+        font = ImageFont.truetype('C:/Windows/Fonts/msyh.ttc', max(160, image.width // 4))
     except OSError:
         font = ImageFont.load_default()
     padding = max(3, image.width // 320)
@@ -24,12 +26,17 @@ def draw_boxes(image, boxes):
         draw.rectangle(coords, outline=color, width=max(2, image.width // 200))
         label = CHINESE_NAMES[cls]
         x, y = coords[:2]
-        text_box = draw.textbbox((x + padding, 0), label, font=font)
+        text_box = draw.textbbox((0, 0), label, font=font)
+        label_width = text_box[2] - text_box[0]
         label_height = text_box[3] - text_box[1]
+        # Keep the enlarged label fully visible even when the detection box is
+        # close to the right edge of a narrow source image.
+        label_x = min(max(0, int(x)), max(0, image.width - label_width - padding * 2))
         label_y = max(0, y - label_height - padding * 2)
-        rect = draw.textbbox((x + padding, label_y + padding), label, font=font)
+        rect = (label_x, label_y, label_x + label_width + padding * 2,
+                label_y + label_height + padding * 2)
         draw.rectangle(rect, fill=color)
-        draw.text((x + padding, label_y + padding), label, fill='white', font=font)
+        draw.text((label_x + padding, label_y + padding), label, fill='white', font=font)
     return canvas
 
 
