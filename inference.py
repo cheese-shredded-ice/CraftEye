@@ -17,7 +17,7 @@ def draw_boxes(image, boxes):
         # the visual label to keep the overlay concise.
         # The result image is fit to the workbench column in the browser. Use a
         # large source label so the class name remains readable after that fit.
-        font = ImageFont.truetype('C:/Windows/Fonts/msyh.ttc', max(160, image.width // 4))
+        font = ImageFont.truetype('C:/Windows/Fonts/msyh.ttc', max(40, image.width // 16))
     except OSError:
         font = ImageFont.load_default()
     padding = max(3, image.width // 320)
