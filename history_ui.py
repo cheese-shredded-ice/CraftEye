@@ -4,12 +4,16 @@ import base64
 from datetime import datetime
 from html import escape
 import io
+import json
+import zipfile
 
 import altair as alt
 import pandas as pd
 import streamlit as st
 
-from recognition_history import load_records, load_record_images, delete_records
+from recognition_history import load_records, load_original_images, load_record_detail, delete_records
+from teaching_report_ui import dimensions_html
+from score_ui import score_html
 from training_trends import summary_html
 from scoring import decision_style
 
@@ -61,6 +65,80 @@ def close_history_dialog():
     st.session_state['_history_delete_open'] = False
 
 
+def close_history_detail():
+    st.session_state.pop('_history_detail_id', None)
+
+
+def detail_archive(detail):
+    """One self-contained download: frozen report, inputs and both image variants."""
+    output = io.BytesIO()
+    payload = {key: value for key, value in detail.items() if key not in {'original_png', 'annotated_png'}}
+    with zipfile.ZipFile(output, 'w', compression=zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr('report.json', json.dumps(payload, ensure_ascii=False, indent=2))
+        for field, name in [('original_png', 'original.png'), ('annotated_png', 'detection.png')]:
+            if detail.get(field):
+                archive.writestr(name, detail[field])
+    return output.getvalue()
+
+
+@st.dialog('识别记录详情', width='large', on_dismiss=close_history_detail)
+def history_detail_dialog(run_id):
+    detail = load_record_detail(run_id)
+    if detail is None:
+        st.info('该记录已删除。')
+        return
+    report, inputs = detail['analysis'], detail['inputs']
+    st.subheader(f'第 {detail["sequence"]} 次识别')
+    st.caption(report['generated_at'] + ' · ' + ('摄像头' if inputs.get('source_type') == 'camera' else '图片'))
+    st.download_button('下载本次完整记录', detail_archive(detail),
+                       f'识别记录-{detail["sequence"]}.zip', 'application/zip', on_click='ignore')
+    if st.button('关闭详情', key='history_detail_close'):
+        close_history_detail()
+        st.rerun()
+    if not detail['complete_snapshot']:
+        st.info('旧版本未保存完整报告，以下仅显示当时已保存的内容。')
+    with st.container(key='history-detail-images'):
+        left, right = st.columns(2)
+        with left:
+            st.markdown('**原始图片**')
+            if detail['original_png']:
+                st.image(detail['original_png'], width='stretch')
+            else:
+                st.info('此记录未保存原图。')
+        with right:
+            st.markdown('**检测结果**')
+            if detail['annotated_png']:
+                st.image(detail['annotated_png'], width='stretch')
+            else:
+                st.info('此记录未保存检测图。')
+    with st.container(key='history-detail-score'):
+        st.html(score_html(report['score']))
+    if report.get('learning_goal'):
+        st.write('训练目标：' + report['learning_goal'])
+    st.write('评分理由：' + report['score'].get('理由', '未保存'))
+    if report.get('dimensions'):
+        with st.container(key='history-detail-dimensions'):
+            st.html(dimensions_html(report['dimensions']))
+    for name in ['缺陷类型', '图中现象', '可能原因', '改良建议']:
+        st.markdown('**【' + name + '】**')
+        values = report.get('sections', {}).get(name)
+        if values:
+            for value in values:
+                st.write(value)
+        else:
+            st.caption('旧记录未保存此项。')
+    with st.expander('检测数据与评分依据'):
+        if inputs.get('detections'):
+            st.dataframe(inputs['detections'], hide_index=True, width='stretch')
+        elif 'detections' in inputs:
+            st.write('本次未检出目标。')
+        else:
+            st.write('旧记录未保存检测框数据。')
+        st.json({'评分': report['score'], '输入': inputs,
+                 '模型': report.get('model'), '评分版本': report.get('rubric_version'),
+                 '分析版本': report.get('feedback_version'), '重点区域': report.get('focus_regions', [])})
+
+
 @st.dialog('删除识别记录', on_dismiss=close_history_dialog)
 def delete_history_dialog():
     records = load_records()
@@ -89,9 +167,12 @@ def delete_history_dialog():
 def render_history():
     # Pause history polling while a dialog is open so it cannot dismiss the form.
     opened = st.session_state.get('_history_delete_open', False)
-    st.fragment(run_every=None if opened else 2.0)(_render_history)()
+    detail_id = st.session_state.get('_history_detail_id')
+    st.fragment(run_every=None if opened or detail_id else 2.0)(_render_history)()
     if opened:
         delete_history_dialog()
+    elif detail_id:
+        history_detail_dialog(detail_id)
 
 
 def _render_history():
@@ -122,32 +203,33 @@ def _render_history():
             page = min(st.session_state.get('history_page', 1), pages)
             st.session_state['history_page'] = page
             visible = list(reversed(records))[(page-1)*PAGE_SIZE:page*PAGE_SIZE]
-            images = load_record_images([record['run_id'] for record in visible])
-            rows = []
-            for record in visible:
-                score = record['score']
-                color, label = decision_style(record.get('assessment') or {})
-                score_text = '—' if score is None else str(score)
-                score_description = (record.get('score_type') or '历史评分') + ' · ' + record['reason']
-                source = '摄像头' if record['source_type'] == 'camera' else '图片'
-                image_data = images.get(record['run_id'])
-                picture = (f'<img class="history-thumbnail" src="data:image/png;base64,{base64.b64encode(image_data).decode("ascii")}" alt="第{record["sequence"]}次 YOLO 检测结果">'
-                           if image_data else '<span class="history-no-image">暂无图片</span>')
-                rows.append(f'<tr><td title="{escape(record["generated_at"], quote=True)} · {source}">{record["sequence"]}</td><td>{picture}</td>'
-                            f'<td>{escape(defect_label(record["defects"]))}</td><td style="color:{color}" title="{escape(score_description, quote=True)}"><b>{score_text}</b><small>{label}</small></td></tr>')
-            with st.container(key='history-grid'):
-                table, actions = st.columns([.86, .14], gap='small')
-                with table:
-                    # Keep local styles inside the fragment's HTML element, not the
-                    # shared event container used for style-only st.html calls.
-                    st.html(f'<style>.st-key-history-grid {{ --history-rows:{len(visible)}; }}</style>'
-                            f'<table class="history-table" style="--history-rows:{len(visible)}"><thead><tr><th>序号</th><th>检测图片</th><th>缺陷类型</th><th>评分</th></tr></thead><tbody>' + ''.join(rows) + '</tbody></table>')
-                with actions, st.container(key='history-row-actions'):
-                    st.html('<div class="history-action-heading">操作</div>')
+            images = load_original_images([record['run_id'] for record in visible])
+            with st.container(key='history-record-grid'):
+                st.html(f'<style>.st-key-history-record-grid{{--history-count:{len(visible)};}}</style>'
+                        '<div class="history-record-header"><div class="history-record-cells">'
+                        '<b>序号</b><b>原始图片</b><b>缺陷类型</b><b>评分</b></div><b>操作</b></div>')
+                with st.container(key='history-record-list'):
                     for record in visible:
-                        st.button('删除', key=f'history_row_delete_{record["run_id"]}',
-                                  on_click=delete_history_record, args=(record['run_id'],),
-                                  use_container_width=True)
+                        score = record['score']
+                        color, label = decision_style(record.get('assessment') or {})
+                        score_text = '—' if score is None else str(score)
+                        image_data = images.get(record['run_id'])
+                        picture = (f'<img class="history-original-thumbnail" src="data:image/png;base64,{base64.b64encode(image_data).decode("ascii")}" alt="第{record["sequence"]}次原始图片">'
+                                   if image_data else '<span class="history-no-image">未保存原图</span>')
+                        defects = escape(defect_label(record['defects']))
+                        with st.container(key='history-entry-'+record['run_id']):
+                            cells, actions = st.columns([.82, .18], gap='small', vertical_alignment='center')
+                            with cells:
+                                st.html(f'<div class="history-record-cells" data-record-id="{escape(record["run_id"], quote=True)}">'
+                                        f'<span title="{escape(record["generated_at"], quote=True)}">{record["sequence"]}</span>'
+                                        f'<div>{picture}</div><span class="history-defect-text" title="{defects}">{defects}</span>'
+                                        f'<span class="history-record-score" style="color:{color}"><b>{score_text}</b><small>{label}</small></span></div>')
+                            with actions, st.container(key='history-actions-'+record['run_id']):
+                                if st.button('详情', key=f'history_row_detail_{record["run_id"]}', use_container_width=True):
+                                    st.session_state['_history_detail_id'] = record['run_id']
+                                    st.rerun()
+                                st.button('删除', key=f'history_row_delete_{record["run_id"]}',
+                                          on_click=delete_history_record, args=(record['run_id'],), use_container_width=True)
             previous, status, following = st.columns([1, 1.4, 1])
             with previous:
                 if st.button('上一页', disabled=page <= 1, key='history_previous'):
@@ -177,6 +259,6 @@ def _render_history():
                     scale=alt.Scale(domain=[max(0, len(scored)-len(recent)), len(scored)+1])),
             y=alt.Y('评分:Q', title='分数', scale=alt.Scale(domain=[0, 100]), axis=alt.Axis(values=[0, 20, 40, 60, 80, 100])),
             tooltip=['记录序号:Q', '时间:N', '评分:Q'],
-        ).properties(height=240).configure_axis(labelFontSize=20, titleFontSize=22, titlePadding=10, labelColor='#334155', titleColor='#334155').configure_view(stroke=None)
+        ).properties(height=160).configure_axis(labelFontSize=14, titleFontSize=16, titlePadding=6, labelColor='#334155', titleColor='#334155').configure_view(stroke=None)
         st.altair_chart(chart, width='stretch', key='history_score_chart')
         st.html(summary_html(records))

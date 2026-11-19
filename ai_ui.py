@@ -54,13 +54,13 @@ def get_executor():
     return ThreadPoolExecutor(max_workers=2, thread_name_prefix='welding-visual-ai')
 
 
-def analyze_and_record(run_id, namespace, *args, **kwargs):
+def analyze_and_record(run_id, namespace, *args, history_inputs=None, **kwargs):
     report = analyze(*args, **kwargs)
     report['run_id'] = run_id
     try:
         save_record(run_id, namespace, report,
                     annotated=args[1] if len(args) > 1 else kwargs.get('annotated'),
-                    original=args[0] if args else kwargs.get('original'))
+                    original=args[0] if args else kwargs.get('original'), inputs=history_inputs)
     except Exception:
         # Keep a successful report usable even when local storage is unavailable.
         report['history_save_error'] = True
@@ -80,7 +80,7 @@ def submit_analysis(namespace, source_id, original, annotated, rows, observation
               'learning_goal': learning_goal, 'original_size': [original.width, original.height]}
     future = get_executor().submit(analyze_and_record, uuid.uuid4().hex, namespace, original.copy(), annotated.copy(),
                                     copy.deepcopy(rows), list(observations), context, config,
-                                    learning_goal=learning_goal)
+                                    learning_goal=learning_goal, history_inputs=copy.deepcopy(inputs))
     st.session_state[job_key] = {'identity': identity, 'future': future, 'inputs': inputs}
     st.session_state.pop(f'_ai_error_{namespace}', None)
     st.session_state.pop(f'_ai_result_{namespace}', None)

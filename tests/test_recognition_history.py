@@ -8,7 +8,7 @@ import unittest
 from unittest.mock import patch
 
 from PIL import Image, ImageDraw
-from recognition_history import load_records, save_record, load_record_images, delete_records, load_picker_records, load_picker_image
+from recognition_history import load_records, save_record, load_record_images, delete_records, load_picker_records, load_picker_image, load_record_detail, load_original_images
 
 
 def report(score=76):
@@ -54,7 +54,7 @@ class RecognitionHistoryTest(unittest.TestCase):
         from ai_ui import analyze_and_record
         with patch('ai_ui.analyze', return_value=report()), patch('ai_ui.save_record') as save:
             result = analyze_and_record('run', 'camera', 'input')
-        save.assert_called_once_with('run', 'camera', result, annotated=None, original='input')
+        save.assert_called_once_with('run', 'camera', result, annotated=None, original='input', inputs=None)
         with patch('ai_ui.analyze', side_effect=RuntimeError('failed')), patch('ai_ui.save_record') as save:
             with self.assertRaises(RuntimeError):
                 analyze_and_record('failed', 'image')
@@ -96,24 +96,71 @@ class RecognitionHistoryTest(unittest.TestCase):
         annotated = Image.new('RGB', (30, 30), 'red')
         with patch('ai_ui.analyze', return_value=report()), patch('ai_ui.save_record') as save:
             result = analyze_and_record('run', 'camera', original, annotated)
-        save.assert_called_once_with('run', 'camera', result, annotated=annotated, original=original)
+        save.assert_called_once_with('run', 'camera', result, annotated=annotated, original=original, inputs=None)
 
-    def test_picker_prefers_original_and_preserves_legacy_image(self):
+    def test_picker_and_previews_are_original_only(self):
         original=Image.new('RGB',(25,40),'gray')
         annotated=Image.new('RGB',(25,40),'red')
         save_record('old','image',report(),self.path,annotated=annotated)
         save_record('new','image',report(),self.path,annotated=annotated,original=original)
         save_record('no-image','image',report(),self.path)
         rows=load_picker_records(self.path)
-        self.assertEqual([r['run_id'] for r in rows],['new','old'])
-        self.assertEqual([r['has_original'] for r in rows],[1,0])
-        for key,image in [('new',original),('old',annotated)]:
+        self.assertEqual([r['run_id'] for r in rows],['new'])
+        self.assertEqual([r['has_original'] for r in rows],[1])
+        self.assertIsNone(load_picker_image('old',self.path))
+        self.assertEqual(set(load_original_images(['new','old'],self.path)),{'new'})
+        self.assertEqual(Image.open(io.BytesIO(load_original_images(['new'],self.path)['new'])).tobytes(),original.tobytes())
+        for key,image in [('new',original)]:
             self.assertEqual(Image.open(io.BytesIO(load_picker_image(key,self.path))).tobytes(),image.tobytes())
         self.assertEqual(Image.open(io.BytesIO(load_record_images(['new'],self.path,full_size=True)['new'])).tobytes(),annotated.tobytes())
         delete_records(['new'],self.path)
         self.assertIsNone(load_picker_image('new',self.path))
         with closing(sqlite3.connect(self.path)) as connection:
             self.assertEqual(connection.execute('SELECT COUNT(*) FROM recognition_originals').fetchone()[0],0)
+
+    def test_complete_snapshot_inputs_and_images_survive_reload(self):
+        payload=report()
+        payload['sections'].update({'图中现象':['局部凹槽'], '可能原因':['行进不稳']})
+        payload.update(model='frozen-model',learning_goal='匀速',feedback_version='frozen-v1',
+                       focus_regions=[{'box':[1,2,3,4]}])
+        inputs={'detections':[{'类别':'缺陷','置信度':.75,'左':1}],
+                'manual_observations':['弧光不稳'],'original_size':[25,40],
+                'source_id':'original-fingerprint','api_key':'must-not-be-stored'}
+        original=Image.new('RGB',(25,40),'blue')
+        annotated=Image.new('RGB',(25,40),'red')
+        save_record('full','camera',payload,self.path,original=original,annotated=annotated,inputs=inputs)
+        save_record('full','camera',report(99),self.path,inputs={'detections':[]})
+        detail=load_record_detail('full',self.path)
+        self.assertTrue(detail['complete_snapshot'])
+        self.assertEqual(detail['analysis']['sections'],payload['sections'])
+        self.assertEqual(detail['analysis']['score']['分数'],76)
+        self.assertEqual(detail['analysis']['model'],'frozen-model')
+        self.assertEqual(detail['inputs']['detections'],inputs['detections'])
+        self.assertEqual(detail['inputs']['source_type'],'camera')
+        self.assertNotIn(b'must-not-be-stored',self.path.read_bytes())
+        self.assertEqual(Image.open(io.BytesIO(detail['original_png'])).tobytes(),original.tobytes())
+        self.assertEqual(Image.open(io.BytesIO(detail['annotated_png'])).tobytes(),annotated.tobytes())
+        from history_ui import detail_archive
+        import zipfile,json
+        with zipfile.ZipFile(io.BytesIO(detail_archive(detail))) as archive:
+            self.assertEqual(set(archive.namelist()),{'report.json','original.png','detection.png'})
+            self.assertEqual(json.loads(archive.read('report.json'))['analysis'],detail['analysis'])
+        delete_records(['full'],self.path)
+        self.assertIsNone(load_record_detail('full',self.path))
+        with closing(sqlite3.connect(self.path)) as connection:
+            self.assertEqual(connection.execute('SELECT COUNT(*) FROM recognition_reports').fetchone()[0],0)
+
+    def test_legacy_detail_preserves_known_fields_without_fabrication(self):
+        save_record('old','image',report(),self.path)
+        with closing(sqlite3.connect(self.path)) as connection,connection:
+            connection.execute('DROP TABLE recognition_reports')
+        detail=load_record_detail('old',self.path)
+        self.assertFalse(detail['complete_snapshot'])
+        self.assertEqual(detail['analysis']['sections']['缺陷类型'],report()['sections']['缺陷类型'])
+        self.assertNotIn('图中现象',detail['analysis']['sections'])
+        self.assertNotIn('detections',detail['inputs'])
+        self.assertIsNone(detail['original_png'])
+        self.assertIsNone(load_record_detail('missing',self.path))
 
     def test_delete_selected_records_and_images_preserves_others(self):
         image = Image.new('RGB', (20, 20), 'red')

@@ -31,7 +31,7 @@ with sync_playwright() as p:
         expect(page.locator('[data-test-ready]')).to_be_attached(timeout=60000)
         page.get_by_role('button',name='选择图片',exact=True).click()
         gallery=page.locator('.st-key-image-gallery')
-        expect(page.get_by_test_id('stSelectbox')).to_have_count(0)
+        expect(page.locator('[data-testid="stSelectbox"]:visible')).to_have_count(0)
         for key in ['uniform','pipe','crack','porosity']:
             expect(tile('example:'+key)).to_be_visible()
             assert tile('example:'+key).locator('img').first.evaluate('(el)=>el.complete&&el.naturalWidth>0')
@@ -62,7 +62,7 @@ with sync_playwright() as p:
         expect(tile('example:rough')).to_have_attribute('kind','primary')
         page.get_by_text('历史图片',exact=True).click()
         expect(tile('history:picker-new')).to_be_visible()
-        expect(tile('history:picker-old')).to_be_visible()
+        assert 'history:picker-old' not in history
         tile('history:picker-new').click()
         expect(tile('history:picker-new')).to_have_attribute('kind','primary')
         page.get_by_text('示例图片',exact=True).click()
@@ -70,7 +70,7 @@ with sync_playwright() as p:
         page.mouse.click(900,35)
         expect(page.get_by_role('button',name='开始识别',exact=True)).to_be_enabled()
         page.get_by_role('button',name='开始识别',exact=True).click()
-        expect(page.locator('.detection-summary')).to_be_visible(timeout=60000)
+        expect(page.locator('.st-key-image-stage .detection-summary')).to_be_visible(timeout=60000)
         expect(page.get_by_test_id('stException')).to_have_count(0)
         assert not errors,errors
         assert (requests.read_bytes() if requests.exists() else b'')==before

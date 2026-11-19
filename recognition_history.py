@@ -44,11 +44,24 @@ def connect(path=None):
         run_id TEXT PRIMARY KEY,
         score_json TEXT NOT NULL
     )''')
+    connection.execute('''CREATE TABLE IF NOT EXISTS recognition_reports (
+        run_id TEXT PRIMARY KEY,
+        schema_version INTEGER NOT NULL,
+        report_json TEXT NOT NULL,
+        inputs_json TEXT NOT NULL
+    )''')
     connection.commit()
     return connection
 
 
-def save_record(run_id, source_type, report, path=None, *, annotated=None, original=None):
+REPORT_FIELDS = {'run_id', 'provider', 'model', 'learning_goal', 'feedback_version',
+                 'focus_confidence_threshold', 'focus_regions', 'generated_at', 'score',
+                 'dimensions', 'rubric_version', 'dimension_weights', 'sections', 'usage', 'note'}
+INPUT_FIELDS = {'source_id', 'source_type', 'detections', 'manual_observations',
+                'process_context', 'learning_goal', 'original_size'}
+
+
+def save_record(run_id, source_type, report, path=None, *, annotated=None, original=None, inputs=None):
     score = report['score']['分数']
     if score is not None and (type(score) is not int or not 0 <= score <= 100):
         raise ValueError('Invalid score')
@@ -80,28 +93,78 @@ def save_record(run_id, source_type, report, path=None, *, annotated=None, origi
         if cursor.rowcount and report['score'].get('评分版本'):
             connection.execute('INSERT INTO recognition_assessment VALUES (?, ?)',
                                (run_id, json.dumps(report['score'], ensure_ascii=False)))
+        if cursor.rowcount:
+            # Persist the complete result, not configuration/credentials or a
+            # later recomputation under a different scoring or prompt version.
+            stored_report = {key: value for key, value in report.items() if key in REPORT_FIELDS}
+            stored_inputs = {key: value for key, value in (inputs or {}).items() if key in INPUT_FIELDS}
+            stored_inputs['source_type'] = source_type
+            connection.execute('INSERT INTO recognition_reports VALUES (?, ?, ?, ?)',
+                (run_id, 1, json.dumps(stored_report, ensure_ascii=False), json.dumps(stored_inputs, ensure_ascii=False)))
 
 
 def load_picker_records(path=None):
-    """List only records with images, without loading image blobs or full reports."""
+    """The image picker is original-only; never pass an old overlay back to YOLO."""
     with closing(connect(path)) as connection:
         return [dict(row) for row in connection.execute('''
             SELECT h.run_id, h.sequence, h.generated_at, h.defects,
                    (o.run_id IS NOT NULL) AS has_original
             FROM recognition_history h
-            JOIN recognition_images i ON i.run_id=h.run_id
-            LEFT JOIN recognition_originals o ON o.run_id=h.run_id
+            JOIN recognition_originals o ON o.run_id=h.run_id
             ORDER BY h.sequence DESC LIMIT 50''')]
 
 
 def load_picker_image(run_id, path=None):
     with closing(connect(path)) as connection:
-        row = connection.execute('''SELECT COALESCE(o.original_png,i.annotated_png) AS image
+        row = connection.execute('''SELECT o.original_png AS image
             FROM recognition_history h
-            JOIN recognition_images i ON i.run_id=h.run_id
-            LEFT JOIN recognition_originals o ON o.run_id=h.run_id
+            JOIN recognition_originals o ON o.run_id=h.run_id
             WHERE h.run_id=?''', (run_id,)).fetchone()
         return row['image'] if row else None
+
+
+def load_original_images(run_ids, path=None):
+    """Small previews of genuine originals; absent originals remain absent."""
+    if not run_ids:
+        return {}
+    with closing(connect(path)) as connection:
+        rows = connection.execute(f'SELECT run_id, original_png FROM recognition_originals WHERE run_id IN ({",".join("?" for _ in run_ids)})', list(run_ids))
+        images = {}
+        for row in rows:
+            with Image.open(io.BytesIO(row['original_png'])) as image:
+                thumbnail = image.convert('RGB')
+                thumbnail.thumbnail((400, 240), Image.Resampling.LANCZOS)
+                buffer = io.BytesIO()
+                thumbnail.save(buffer, format='PNG')
+                images[row['run_id']] = buffer.getvalue()
+        return images
+
+
+def load_record_detail(run_id, path=None):
+    with closing(connect(path)) as connection:
+        record = connection.execute('SELECT * FROM recognition_history WHERE run_id=?', (run_id,)).fetchone()
+        if record is None:
+            return None
+        saved = connection.execute('SELECT * FROM recognition_reports WHERE run_id=?', (run_id,)).fetchone()
+        original = connection.execute('SELECT original_png FROM recognition_originals WHERE run_id=?', (run_id,)).fetchone()
+        annotated = connection.execute('SELECT annotated_png FROM recognition_images WHERE run_id=?', (run_id,)).fetchone()
+        scoring = connection.execute('SELECT * FROM recognition_scoring WHERE run_id=?', (run_id,)).fetchone()
+        assessment = connection.execute('SELECT score_json FROM recognition_assessment WHERE run_id=?', (run_id,)).fetchone()
+    if saved:
+        report, inputs = json.loads(saved['report_json']), json.loads(saved['inputs_json'])
+    else:
+        # Recover only fields actually stored by older releases. Missing narrative
+        # and inputs cannot be recreated without inventing a historical result.
+        report = {'generated_at': record['generated_at'],
+                  'score': json.loads(assessment[0]) if assessment else {'分数': record['score'], '理由': record['reason']},
+                  'sections': {'缺陷类型': json.loads(record['defects']), '改良建议': record['suggestion'].splitlines()}}
+        if scoring:
+            report.update(dimensions=json.loads(scoring['dimensions']),
+                          dimension_weights=json.loads(scoring['weights']), rubric_version=scoring['rubric_version'])
+        inputs = {'source_type': record['source_type']}
+    return {'run_id': run_id, 'sequence': record['sequence'], 'analysis': report, 'inputs': inputs,
+            'complete_snapshot': bool(saved), 'schema_version': saved['schema_version'] if saved else 0,
+            'original_png': original[0] if original else None, 'annotated_png': annotated[0] if annotated else None}
 
 
 def load_record_images(run_ids, path=None, *, full_size=False):
@@ -151,5 +214,6 @@ def delete_records(run_ids, path=None):
             connection.execute('DELETE FROM recognition_originals WHERE run_id = ?', (run_id,))
             connection.execute('DELETE FROM recognition_scoring WHERE run_id = ?', (run_id,))
             connection.execute('DELETE FROM recognition_assessment WHERE run_id = ?', (run_id,))
+            connection.execute('DELETE FROM recognition_reports WHERE run_id = ?', (run_id,))
             removed += connection.execute('DELETE FROM recognition_history WHERE run_id = ?', (run_id,)).rowcount
     return removed

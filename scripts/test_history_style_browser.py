@@ -24,10 +24,10 @@ def main():
         browser = p.chromium.launch(channel='msedge', headless=True)
         page = browser.new_page(viewport={'width': 1366, 'height': 768})
         try:
-            page.goto('http://127.0.0.1:8502')
+            page.goto('http://127.0.0.1:8514')
             expect(page.locator('[data-test-ready]')).to_be_attached(timeout=60000)
             page.get_by_role('tab', name='识别记录', exact=True).click()
-            expect(page.locator('.history-table tbody tr')).to_have_count(5)
+            expect(page.locator('[data-record-id]')).to_have_count(5)
             page.evaluate('''() => {
                 window.styleFailures = [];
                 function check() {

@@ -7,7 +7,7 @@ from pathlib import Path
 
 from PIL import Image, ImageOps
 import streamlit as st
-from recognition_history import load_picker_records, load_picker_image, load_record_images
+from recognition_history import load_picker_records, load_picker_image, load_original_images
 
 EXAMPLES = Path(__file__).with_name('assets') / 'weld-examples'
 
@@ -61,7 +61,7 @@ def render_image_picker():
         key='image_gallery_category',label_visibility='collapsed')
     prefix='history:' if category=='历史图片' else 'example:'
     keys=[key for key in options if key.startswith(prefix)]
-    history=load_record_images([options[key]['run_id'] for key in keys if 'run_id' in options[key]])
+    history=load_original_images([options[key]['run_id'] for key in keys if 'run_id' in options[key]])
     with st.container(key='image-gallery',height=300,border=False):
         for start in range(0,len(keys),2):
             columns=st.columns(2,gap='small')
@@ -72,7 +72,7 @@ def render_image_picker():
                     if data:
                         label=item['label']
                         if 'run_id' in item:
-                            label+=' · 原图' if item['original'] else ' · 历史检测图'
+                            label+=' · 原图'
                         active=st.session_state.get('_image_source_kind')=='library' and st.session_state.get('image_library_choice')==key
                         st.button(f'![{label}]({thumbnail_url(data)})',key='gallery_'+key,
                             help=label,type='primary' if active else 'secondary',

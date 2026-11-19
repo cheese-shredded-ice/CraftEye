@@ -1,6 +1,7 @@
 """Browser integration against ai_test_app.py on port 8502 with fake API/camera."""
 import json
 import os
+import sqlite3
 from pathlib import Path
 
 import cv2
@@ -10,6 +11,18 @@ from playwright.sync_api import sync_playwright, expect
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / 'outputs' / 'ai-check'
+
+
+def assert_saved_snapshot(exported):
+    run_id = exported['analysis']['run_id']
+    with sqlite3.connect(OUTPUT / 'history-test.sqlite3') as connection:
+        snapshot = connection.execute('SELECT report_json, inputs_json FROM recognition_reports WHERE run_id=?', (run_id,)).fetchone()
+        assert snapshot is not None
+        assert json.loads(snapshot[0]) == exported['analysis']
+        assert json.loads(snapshot[1]) == exported['inputs']
+        for table, column in [('recognition_originals', 'original_png'), ('recognition_images', 'annotated_png')]:
+            blob = connection.execute(f'SELECT {column} FROM {table} WHERE run_id=?', (run_id,)).fetchone()
+            assert blob and blob[0].startswith(b'\x89PNG')
 
 
 def assert_report_stable(page, panel):
@@ -53,8 +66,9 @@ def assert_single_screen(page, *panels):
         }
         const report = document.querySelector(panels[1] + ' .teaching-report');
         if (report && report.scrollHeight > report.clientHeight + 2) failures.push('report text clipped ' + report.scrollHeight + '/' + report.clientHeight + ' ' + [...report.children].map(el => el.tagName + ':' + el.getBoundingClientRect().height).join(','));
-        if (report && parseFloat(getComputedStyle(report).fontSize) < 18) failures.push('presentation text too small');
-        if (report && [...report.querySelectorAll('.feedback-text p')].some(el => parseFloat(getComputedStyle(el).fontSize) < 18)) failures.push('feedback text too small');
+        const minimumFont = innerWidth <= 1100 || innerHeight <= 650 ? 11 : 15;
+        if (report && parseFloat(getComputedStyle(report).fontSize) < minimumFont) failures.push('presentation text too small');
+        if (report && [...report.querySelectorAll('.feedback-text p')].some(el => parseFloat(getComputedStyle(el).fontSize) < minimumFont)) failures.push('feedback text too small');
         for (const image of document.querySelectorAll(panels[1] + ' .reference-grid img, ' + panels[1] + ' .radar-image'))
             if (!image.complete || !image.naturalWidth) failures.push('reference image not loaded');
         return failures;
@@ -147,6 +161,7 @@ def main():
             report = json.loads((OUTPUT/'image-ai-report.json').read_text(encoding='utf-8'))
             page.mouse.click(900, 35)  # Close popovers outside their expanded preview area.
             assert report['inputs']['source_type']=='image'
+            assert_saved_snapshot(report)
             assert report['analysis']['sections']['缺陷类型']
             assert report['analysis']['score']['分数'] == 73
             assert len(report['analysis']['dimensions']) == 6
@@ -227,6 +242,7 @@ def main():
             page.mouse.click(900, 35)  # Close popovers outside their expanded preview area.
             report = json.loads((OUTPUT/'camera-ai-report.json').read_text(encoding='utf-8'))
             assert report['inputs']['source_type']=='camera'
+            assert_saved_snapshot(report)
             assert report['analysis']['score']['分数'] == 73
             assert report['analysis']['sections']['缺陷类型']
             requests = [json.loads(row) for row in (OUTPUT/'requests.jsonl').read_text().splitlines()]
@@ -238,16 +254,16 @@ def main():
             page.get_by_role('button',name='清除快照',exact=True).click()
             expect(capture).to_be_disabled(timeout=30000)
             page.get_by_role('tab', name='识别记录', exact=True).click()
-            expect(page.locator('.history-table tbody tr')).to_have_count(3, timeout=10000)
-            expect(page.locator('.history-thumbnail')).to_have_count(3)
+            expect(page.locator('[data-record-id]')).to_have_count(3, timeout=10000)
+            expect(page.locator('.history-original-thumbnail')).to_have_count(3)
             expect(page.get_by_text('分数成长曲线', exact=True)).to_be_visible()
             page.wait_for_timeout(2500)
-            expect(page.locator('.history-table tbody tr')).to_have_count(3)
+            expect(page.locator('[data-record-id]')).to_have_count(3)
             page.reload()
             expect(page.locator('[data-test-ready]')).to_be_attached(timeout=60000)
             page.get_by_role('tab', name='识别记录', exact=True).click()
-            expect(page.locator('.history-table tbody tr')).to_have_count(3, timeout=10000)
-            expect(page.locator('.history-thumbnail')).to_have_count(3)
+            expect(page.locator('[data-record-id]')).to_have_count(3, timeout=10000)
+            expect(page.locator('.history-original-thumbnail')).to_have_count(3)
             assert not errors, errors
             print(json.dumps({'image_analysis':'passed','camera_snapshot_analysis':'passed',
                 'single_screen_desktop_sizes':'passed','idle_report_stability':'passed',

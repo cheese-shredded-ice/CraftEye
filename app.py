@@ -29,9 +29,9 @@ with st.container(key='dashboard-header'):
             render_ai_settings()
 
 SHOW_REFERENCE_TABS = False
-tab_names = ['图片识别', '摄像头实时识别', '识别记录']
+tab_names = ['图片识别', '摄像头实时识别', '识别记录', '浏览数据与标注']
 if SHOW_REFERENCE_TABS:
-    tab_names += ['浏览数据与标注', '模型与说明']
+    tab_names += ['模型与说明']
 tabs = st.tabs(tab_names)
 detect_tab, camera_tab = tabs[:2]
 history_tab = tabs[2]
@@ -97,32 +97,33 @@ with history_tab:
     from history_ui import render_history
     render_history()
 
-if SHOW_REFERENCE_TABS:
-    browse_tab, info_tab = tabs[3:]
-    with browse_tab:
-        split_column, index_column = st.columns([1, 3])
-        with split_column:
-            split = st.selectbox('数据分组', ['train', 'valid', 'test'],
-                                 format_func=lambda s: {'train': '训练集', 'valid': '验证集', 'test': '测试集'}[s])
-        files = sorted((DATASET / split / 'images').glob('*.jpg'))
-        if files:
-            with index_column:
-                index = st.number_input('图片序号', min_value=1, max_value=len(files), value=1)
-            selected = files[index - 1]
-            original = Image.open(selected).convert('RGB')
-            boxes, rows = [], []
-            label = DATASET / split / 'labels' / (selected.stem + '.txt')
-            for line in label.read_text().splitlines():
-                cls, x, y, w, h = map(float, line.split())
-                coords = ((x-w/2)*original.width, (y-h/2)*original.height,
-                          (x+w/2)*original.width, (y+h/2)*original.height)
-                boxes.append((int(cls), coords, None))
-                rows.append({'类别': CHINESE_NAMES[int(cls)], '原始标签': CLASS_NAMES[int(cls)]})
-            with st.container(key='browse-image'):
-                st.image(draw_boxes(original, boxes), width='stretch')
-            if rows:
-                detection_summary(rows)
+browse_tab = tabs[3]
+with browse_tab:
+    split_column, index_column = st.columns([1, 3])
+    with split_column:
+        split = st.selectbox('数据分组', ['train', 'valid', 'test'],
+                             format_func=lambda s: {'train': '训练集', 'valid': '验证集', 'test': '测试集'}[s])
+    files = sorted((DATASET / split / 'images').glob('*.jpg'))
+    if files:
+        with index_column:
+            index = st.number_input('图片序号', min_value=1, max_value=len(files), value=1)
+        selected = files[index - 1]
+        original = Image.open(selected).convert('RGB')
+        boxes, rows = [], []
+        label = DATASET / split / 'labels' / (selected.stem + '.txt')
+        for line in label.read_text().splitlines():
+            cls, x, y, w, h = map(float, line.split())
+            coords = ((x-w/2)*original.width, (y-h/2)*original.height,
+                      (x+w/2)*original.width, (y+h/2)*original.height)
+            boxes.append((int(cls), coords, None))
+            rows.append({'类别': CHINESE_NAMES[int(cls)], '原始标签': CLASS_NAMES[int(cls)]})
+        with st.container(key='browse-image'):
+            st.image(draw_boxes(original, boxes), width='stretch')
+        if rows:
+            detection_summary(rows)
 
+if SHOW_REFERENCE_TABS:
+    info_tab = tabs[4]
     with info_tab:
         st.write('来源：[Hugging Face 数据集](https://huggingface.co/datasets/avinashhm/the-welding-defect-dataset-v2)')
         st.write('保留原始分组：训练 1,619 张，验证 283 张，测试 126 张。')
