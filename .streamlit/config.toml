@@ -1,7 +1,9 @@
 [server]
 address = "127.0.0.1"
 port = 8501
-maxUploadSize = 20
+# Streamlit requires an integer limit (MB); use its protobuf int32 maximum.
+# This removes the practical application cap; available memory/disk still apply.
+maxUploadSize = 2147483647
 headless = true
 
 [browser]

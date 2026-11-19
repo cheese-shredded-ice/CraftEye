@@ -14,6 +14,7 @@ import requests
 from scoring import (DIMENSIONS, RUBRIC_VERSION, evaluate_quality, SCORE_FORMULA,
                      PASS_SCORE, PASS_MINIMUM, EXCELLENT_SCORE, EXCELLENT_MINIMUM)
 from focus_regions import FOCUS_CONFIDENCE, MAX_FOCUS_CROPS, focus_regions
+from analysis_audit import build_audit
 
 DEFAULT_ENDPOINT = 'https://dashscope.aliyuncs.com/compatible-mode/v1'
 DEFAULT_MODEL = 'qwen3-vl-plus'
@@ -176,7 +177,7 @@ def analyze(original, annotated, rows, observations, context, config, *, learnin
         except (ValueError, KeyError, TypeError, IndexError):
             raise AnalysisError('分析服务返回格式异常，请重试。') from None
         usage = body.get('usage', {})
-        return {'provider': '通义千问', 'model': config.model.strip(),
+        report = {'provider': '通义千问', 'model': config.model.strip(),
             'learning_goal': learning_goal.strip() or DEFAULT_LEARNING_GOAL,
             'feedback_version': FEEDBACK_VERSION,
             'focus_confidence_threshold': FOCUS_CONFIDENCE,
@@ -190,6 +191,8 @@ def analyze(original, annotated, rows, observations, context, config, *, learnin
             'usage': {key: usage[key] for key in ('prompt_tokens', 'completion_tokens', 'total_tokens')
                       if isinstance(usage, dict) and isinstance(usage.get(key), int)},
             'note': '这是练习参考，具体操作和参数调整请结合老师的指导。'}
+        report['audit'] = build_audit(report, payload, original.size, rows)
+        return report
     finally:
         response.close()
 
@@ -229,4 +232,9 @@ def report_text(report):
         lines.extend(f'{index}. {item}' for index, item in enumerate(report['sections'][section], 1))
         lines.append('')
     lines.append(report['note'])
+    if report.get('audit'):
+        lines.extend(['', '【运算过程留痕】', '数据与计算一致性：' + ('通过' if all(x['passed'] for x in report['audit']['checks']) else '存在差异'),
+                      '请求内容指纹：' + report['audit']['request_sha256'],
+                      '图像输入数：' + str(len(report['audit']['images'])),
+                      '完整精确计算、图像指纹与校验项见 JSON 报告的 score.计算明细 和 audit。'])
     return '\n'.join(lines)

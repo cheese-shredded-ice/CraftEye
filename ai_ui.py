@@ -142,7 +142,7 @@ def _render_ai_analysis(namespace, source_id, original, annotated, rows, observa
             st.warning('本次结果已生成，但识别记录保存失败，请先下载报告。')
         view_key = f'ai_view_{namespace}'
         view = st.session_state.get(view_key, '六维评分')
-        st.html(report_html(report, original, view))
+        st.html(report_html(report, original, view, completed['inputs']))
         controls, downloads = st.columns([1.35, 1])
         with controls:
             st.radio('评价视图', ['六维评分', '改进建议'], horizontal=True,

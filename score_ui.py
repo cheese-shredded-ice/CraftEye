@@ -25,6 +25,9 @@ def score_html(score):
                  f'<span>基础分 <b>{number_text("基础分")}</b></span>'
                  f'<span>短板惩罚 <b>{deduction}</b></span>'
                  f'<span>最终分 <b>{number}</b></span></div>')
+    if score.get('是否达到教学目标'):
+        breakdown += ('<div class="goal-decision" data-teaching-goal="' + escape(score['是否达到教学目标'], quote=True) + '">'
+                      '教学目标：<b>' + escape(score['是否达到教学目标']) + '</b> · ' + escape(score.get('等级', '')) + '</div>')
     cap_note = ''
     if score.get('关键缺陷'):
         types = '、'.join(item['类型'] for item in score['关键缺陷'])

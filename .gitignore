@@ -5,6 +5,8 @@ __pycache__/
 dataset/
 models/*.pt
 models/*.onnx
+models/behavior/*.pt
+models/behavior/*.onnx
 runs/
 logs/
 data.local.yaml

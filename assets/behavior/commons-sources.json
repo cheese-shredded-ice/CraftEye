@@ -1,0 +1,301 @@
+{
+  "batchcomplete": "",
+  "query": {
+    "pages": {
+      "158164258": {
+        "pageid": 158164258,
+        "ns": 6,
+        "title": "File:MIG welding.webm",
+        "imagerepository": "local",
+        "imageinfo": [
+          {
+            "size": 4402809,
+            "width": 1632,
+            "height": 1066,
+            "duration": 37,
+            "url": "https://upload.wikimedia.org/wikipedia/commons/a/af/MIG_welding.webm?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+            "descriptionurl": "https://commons.wikimedia.org/wiki/File:MIG_welding.webm",
+            "descriptionshorturl": "https://commons.wikimedia.org/w/index.php?curid=158164258",
+            "extmetadata": {
+              "DateTime": {
+                "value": "2025-02-08 00:13:21",
+                "source": "mediawiki-metadata",
+                "hidden": ""
+              },
+              "ObjectName": {
+                "value": "MIG welding",
+                "source": "mediawiki-metadata"
+              },
+              "CommonsMetadataExtension": {
+                "value": 1.2,
+                "source": "extension",
+                "hidden": ""
+              },
+              "Categories": {
+                "value": "Welding",
+                "source": "commons-categories",
+                "hidden": ""
+              },
+              "Assessments": {
+                "value": "",
+                "source": "commons-categories",
+                "hidden": ""
+              },
+              "ImageDescription": {
+                "value": "MIG welding filmed with a mounted and shaded lens",
+                "source": "commons-desc-page"
+              },
+              "DateTimeOriginal": {
+                "value": "2020-07-16",
+                "source": "commons-desc-page"
+              },
+              "Credit": {
+                "value": "MacDonald, Chris (16 July 2020). \"<a rel=\"nofollow\" class=\"external text\" href=\"https://www.youtube.com/watch?v=tDcR9tHguIA&amp;t=109s\">Hey! Trying to film some welding here! 🤣</a>\" <a rel=\"nofollow\" class=\"external text\" href=\"https://www.youtube.com/@Just1GuyMetalworks\">Just1Guy Metalworks</a>. At 1:49. <a rel=\"nofollow\" class=\"external text\" href=\"https://web.archive.org/web/20250103060604/https://www.youtube.com/watch?v=tDcR9tHguIA\">Archive</a>.",
+                "source": "commons-desc-page"
+              },
+              "Artist": {
+                "value": "Chris MacDonald",
+                "source": "commons-desc-page"
+              },
+              "LicenseShortName": {
+                "value": "CC BY 3.0",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "UsageTerms": {
+                "value": "Creative Commons Attribution 3.0",
+                "source": "commons-desc-page"
+              },
+              "AttributionRequired": {
+                "value": "true",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "Attribution": {
+                "value": "<a rel=\"nofollow\" class=\"external text\" href=\"https://www.youtube.com/@Just1GuyMetalworks\">Chris MacDonald</a>",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "LicenseUrl": {
+                "value": "https://creativecommons.org/licenses/by/3.0",
+                "source": "commons-desc-page"
+              },
+              "Copyrighted": {
+                "value": "True",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "Restrictions": {
+                "value": "",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "License": {
+                "value": "cc-by-3.0",
+                "source": "commons-templates",
+                "hidden": ""
+              }
+            }
+          }
+        ]
+      },
+      "147727918": {
+        "pageid": 147727918,
+        "ns": 6,
+        "title": "File:Welding 09.webm",
+        "imagerepository": "local",
+        "imageinfo": [
+          {
+            "size": 8236800,
+            "width": 1280,
+            "height": 720,
+            "duration": 4.96666650390625,
+            "url": "https://upload.wikimedia.org/wikipedia/commons/6/67/Welding_09.webm?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+            "descriptionurl": "https://commons.wikimedia.org/wiki/File:Welding_09.webm",
+            "descriptionshorturl": "https://commons.wikimedia.org/w/index.php?curid=147727918",
+            "extmetadata": {
+              "DateTime": {
+                "value": "2024-04-25 18:16:34",
+                "source": "mediawiki-metadata",
+                "hidden": ""
+              },
+              "ObjectName": {
+                "value": "Welding 09",
+                "source": "mediawiki-metadata"
+              },
+              "CommonsMetadataExtension": {
+                "value": 1.2,
+                "source": "extension",
+                "hidden": ""
+              },
+              "Categories": {
+                "value": "Self-published work|Images from Wiki Loves Africa 2024|Uploaded via Campaign:wlafrica|Images from Wiki Loves Africa 2024 in Ghana|Images from Wiki Loves Africa 2024 to check|Images from Wiki Loves Africa 2024 without categories|Short clips from Wiki Loves Africa 2024|Videos from Wiki Loves Africa 2024",
+                "source": "commons-categories",
+                "hidden": ""
+              },
+              "Assessments": {
+                "value": "",
+                "source": "commons-categories",
+                "hidden": ""
+              },
+              "ImageDescription": {
+                "value": "A man welding",
+                "source": "commons-desc-page"
+              },
+              "DateTimeOriginal": {
+                "value": "2024-04-24 09:46:40",
+                "source": "commons-desc-page"
+              },
+              "Credit": {
+                "value": "<span class=\"int-own-work\" lang=\"en\">Own work</span>",
+                "source": "commons-desc-page"
+              },
+              "Artist": {
+                "value": "<a href=\"//commons.wikimedia.org/wiki/User:Amuzujoe\" title=\"User:Amuzujoe\">Amuzujoe</a>",
+                "source": "commons-desc-page"
+              },
+              "LicenseShortName": {
+                "value": "CC BY-SA 4.0",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "UsageTerms": {
+                "value": "Creative Commons Attribution-Share Alike 4.0",
+                "source": "commons-desc-page"
+              },
+              "AttributionRequired": {
+                "value": "true",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "LicenseUrl": {
+                "value": "https://creativecommons.org/licenses/by-sa/4.0",
+                "source": "commons-desc-page"
+              },
+              "Copyrighted": {
+                "value": "True",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "Restrictions": {
+                "value": "",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "License": {
+                "value": "cc-by-sa-4.0",
+                "source": "commons-templates",
+                "hidden": ""
+              }
+            }
+          }
+        ]
+      },
+      "91676213": {
+        "pageid": 91676213,
+        "ns": 6,
+        "title": "File:Welding a water supply pipe.webm",
+        "imagerepository": "local",
+        "imageinfo": [
+          {
+            "size": 13825061,
+            "width": 1920,
+            "height": 1080,
+            "duration": 12.593,
+            "url": "https://upload.wikimedia.org/wikipedia/commons/e/ef/Welding_a_water_supply_pipe.webm?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+            "descriptionurl": "https://commons.wikimedia.org/wiki/File:Welding_a_water_supply_pipe.webm",
+            "descriptionshorturl": "https://commons.wikimedia.org/w/index.php?curid=91676213",
+            "extmetadata": {
+              "DateTime": {
+                "value": "2020-06-28 20:36:51",
+                "source": "mediawiki-metadata",
+                "hidden": ""
+              },
+              "ObjectName": {
+                "value": "Welding a water supply pipe",
+                "source": "mediawiki-metadata"
+              },
+              "CommonsMetadataExtension": {
+                "value": 1.2,
+                "source": "extension",
+                "hidden": ""
+              },
+              "Categories": {
+                "value": "CC-Zero|Welding|District heating pipelines|Kyivteploenerho|Self-published work|Files with coordinates missing SDC location of creation",
+                "source": "commons-categories",
+                "hidden": ""
+              },
+              "Assessments": {
+                "value": "",
+                "source": "commons-categories",
+                "hidden": ""
+              },
+              "GPSLatitude": {
+                "value": "50.454575",
+                "source": "commons-desc-page"
+              },
+              "GPSLongitude": {
+                "value": "30.622039",
+                "source": "commons-desc-page"
+              },
+              "GPSMapDatum": {
+                "value": "WGS-84",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "ImageDescription": {
+                "value": "Kyivteploenergo employees welding a hot water supply pipe during repair works.",
+                "source": "commons-desc-page"
+              },
+              "DateTimeOriginal": {
+                "value": "2020-06-06",
+                "source": "commons-desc-page"
+              },
+              "Credit": {
+                "value": "<span class=\"int-own-work\" lang=\"en\">Own work</span>",
+                "source": "commons-desc-page"
+              },
+              "Artist": {
+                "value": "<a href=\"//commons.wikimedia.org/w/index.php?title=User:%D0%A0%D0%BE%D0%BC%D0%B0%D0%BD_%D0%A0%D1%8F%D0%B1%D0%B5%D0%BD%D0%BA%D0%BE&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"User:Роман Рябенко (page does not exist)\">Роман Рябенко</a>",
+                "source": "commons-desc-page"
+              },
+              "LicenseShortName": {
+                "value": "CC0",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "UsageTerms": {
+                "value": "Creative Commons Zero, Public Domain Dedication",
+                "source": "commons-desc-page"
+              },
+              "AttributionRequired": {
+                "value": "false",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "LicenseUrl": {
+                "value": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+                "source": "commons-desc-page"
+              },
+              "Copyrighted": {
+                "value": "True",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "Restrictions": {
+                "value": "",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "License": {
+                "value": "cc0",
+                "source": "commons-templates",
+                "hidden": ""
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

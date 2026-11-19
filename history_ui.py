@@ -7,8 +7,6 @@ import io
 import json
 import zipfile
 
-import altair as alt
-import pandas as pd
 import streamlit as st
 
 from recognition_history import load_records, load_original_images, load_record_detail, delete_records
@@ -16,6 +14,8 @@ from teaching_report_ui import dimensions_html
 from score_ui import score_html
 from training_trends import summary_html
 from scoring import decision_style
+from analysis_audit import audit_html
+from growth_chart import growth_chart
 
 PAGE_SIZE = 5
 
@@ -113,6 +113,10 @@ def history_detail_dialog(run_id):
                 st.info('此记录未保存检测图。')
     with st.container(key='history-detail-score'):
         st.html(score_html(report['score']))
+    with st.container(key='history-detail-audit'):
+        from PIL import Image
+        original = Image.open(io.BytesIO(detail['original_png'])).convert('RGB') if detail['original_png'] else None
+        st.html(audit_html(report, original, inputs))
     if report.get('learning_goal'):
         st.write('训练目标：' + report['learning_goal'])
     st.write('评分理由：' + report['score'].get('理由', '未保存'))
@@ -244,21 +248,15 @@ def _render_history():
     with right, st.container(key='history-growth'):
         st.subheader('分数成长曲线')
         scored = [record for record in records if record['score'] is not None]
-        if not scored:
+        if not records:
             st.html('<div class="trend-chart-empty">等待首个有效评分</div>')
             st.html(summary_html(records))
             return
-        first, latest = scored[0]['score'], scored[-1]['score']
-        change = latest - first
-        st.html(f'<div class="history-stats"><span>最新 <b>{latest}</b></span><span>最高 <b>{max(r["score"] for r in scored)}</b></span><span>较首次 <b>{change:+d}</b></span></div>')
-        recent = scored[-30:]
-        data = pd.DataFrame([{'次序': index + 1, '评分': record['score'], '记录序号': record['sequence'],
-                              '时间': display_time(record['generated_at'])} for index, record in enumerate(scored) if record in recent])
-        chart = alt.Chart(data).mark_line(color='#0d9488', strokeWidth=4, point=alt.OverlayMarkDef(size=120, filled=True)).encode(
-            x=alt.X('次序:Q', title='有效评分次数', axis=alt.Axis(tickMinStep=1, tickCount=min(5, len(recent))),
-                    scale=alt.Scale(domain=[max(0, len(scored)-len(recent)), len(scored)+1])),
-            y=alt.Y('评分:Q', title='分数', scale=alt.Scale(domain=[0, 100]), axis=alt.Axis(values=[0, 20, 40, 60, 80, 100])),
-            tooltip=['记录序号:Q', '时间:N', '评分:Q'],
-        ).properties(height=160).configure_axis(labelFontSize=14, titleFontSize=16, titlePadding=6, labelColor='#334155', titleColor='#334155').configure_view(stroke=None)
-        st.altair_chart(chart, width='stretch', key='history_score_chart')
+        first, latest = (scored[0]['score'], scored[-1]['score']) if scored else (None, None)
+        change = f'{latest-first:+d}' if scored else '—'
+        st.html(f'<div class="history-stats"><span>最近有效 <b>{latest if scored else "—"}</b></span><span>最高 <b>{max(r["score"] for r in scored) if scored else "—"}</b></span><span>较首次 <b>{change}</b></span></div>')
+        st.html('<div class="growth-legend"><span>● 实际得分</span><span>┄ 历次最高</span><span>× 未评分</span></div>')
+        chart = growth_chart(records)
+        st.altair_chart(chart, width='stretch', height='stretch', key='history_score_chart')
+        st.html(f'<div class="growth-caption">{len(records)} 条记录逐一对应 · {len(scored)} 次有效评分 · 横轴为记录序号</div>')
         st.html(summary_html(records))

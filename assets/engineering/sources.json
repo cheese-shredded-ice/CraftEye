@@ -1,0 +1,14 @@
+[
+  {
+    "source_file": "verification.json",
+    "copied_file": "verification.json",
+    "sha256": "edbb44e7c7e44a8ad47370db7deed2bc1cad109eea615ee0fe51f45eefb35a1f",
+    "type": "historical_local_verification"
+  },
+  {
+    "source_file": "outputs/release/CraftEye-v3.0-Lite-Windows-x64/model-parity.json",
+    "copied_file": "model-parity.json",
+    "sha256": "d97bca34d96bea24ad7fa3158dc8f1c48d7d13b0dec9fe410916e914b2336cf3",
+    "type": "historical_local_verification"
+  }
+]

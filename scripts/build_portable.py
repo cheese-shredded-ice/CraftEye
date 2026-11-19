@@ -19,6 +19,8 @@ APP_FILES = ['app.py','advice.py','ai_analysis.py','ai_ui.py','camera.py','camer
              'common.py','dashboard_visuals.py','defect_references.py','focus_regions.py',
              'history_ui.py','image_library_ui.py','inference.py','recognition_history.py','score_ui.py',
              'scoring.py','teaching_report_ui.py','training_trends.py','workspace_ui.py','workspace.css']
+APP_FILES += ['behavior_core.py','behavior_inference.py','behavior_video.py','behavior_ui.py']
+APP_FILES += ['analysis_audit.py','engineering_ui.py','growth_chart.py']
 
 
 def dependencies(roots=None):
@@ -89,6 +91,11 @@ def build(destination, lite=False):
         copy_file(ROOT/'onnx_backend.py',destination/'onnx_backend.py')
     for folder in ['assets','prompts']:
         shutil.copytree(ROOT/folder,destination/folder)
+    # The existing lite runtime has no PyTorch/Ultralytics. It exposes a clear
+    # missing-model message; full builds can run the optional behaviour module.
+    if not lite and (ROOT/'models/behavior').is_dir():
+        shutil.copytree(ROOT/'models/behavior', destination/'models/behavior',
+                        ignore=shutil.ignore_patterns('__pycache__','*.download'))
     model_name = 'welding.onnx' if lite else 'welding.pt'
     for name in [model_name,'source.json','author-README.md']:
         copy_file(ROOT/'models'/name,destination/'models'/name)

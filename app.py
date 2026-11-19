@@ -12,13 +12,16 @@ from inference import draw_boxes, infer
 from ai_ui import render_ai_settings, render_ai_analysis, submit_analysis
 from workspace_ui import install_layout, detection_summary, ai_placeholder, render_brand, section_heading
 from image_library_ui import render_image_picker
+from engineering_ui import render_engineering_entry
 
 st.set_page_config(page_title='数智评鉴系统', page_icon='🔎', layout='wide', initial_sidebar_state='collapsed')
 install_layout()
 with st.container(key='dashboard-header'):
-    title, settings = st.columns([8, 2])
+    title, engineering, settings = st.columns([7, 1.5, 1.5])
     with title:
         render_brand()
+    with engineering:
+        render_engineering_entry()
     with settings:
         with st.popover('设置', use_container_width=True):
             if MODEL.exists():
@@ -29,7 +32,10 @@ with st.container(key='dashboard-header'):
             render_ai_settings()
 
 SHOW_REFERENCE_TABS = False
+ENABLE_BEHAVIOR = False
 tab_names = ['图片识别', '摄像头实时识别', '识别记录', '浏览数据与标注']
+if ENABLE_BEHAVIOR:
+    tab_names.append('实训行为')
 if SHOW_REFERENCE_TABS:
     tab_names += ['模型与说明']
 tabs = st.tabs(tab_names)
@@ -122,8 +128,13 @@ with browse_tab:
         if rows:
             detection_summary(rows)
 
+if ENABLE_BEHAVIOR:
+    with tabs[4]:
+        from behavior_ui import render_behavior
+        render_behavior()
+
 if SHOW_REFERENCE_TABS:
-    info_tab = tabs[4]
+    info_tab = tabs[-1]
     with info_tab:
         st.write('来源：[Hugging Face 数据集](https://huggingface.co/datasets/avinashhm/the-welding-defect-dataset-v2)')
         st.write('保留原始分组：训练 1,619 张，验证 283 张，测试 126 张。')

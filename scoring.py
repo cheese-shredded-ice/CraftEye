@@ -131,7 +131,7 @@ def evaluate_quality(dimensions, defects=(), phenomena=()):
     visible = [(name, maximum) for name, maximum in DIMENSIONS if raw[name]['分数'] is not None]
     coverage = sum(maximum for _, maximum in visible)
     sufficient = len(visible) >= MIN_VISIBLE_DIMENSIONS and coverage >= MIN_VISIBLE_WEIGHT
-    base = minimum = final = penalty = None
+    base = minimum = final = penalty = exact_base = combined = None
     if sufficient:
         exact_base = Fraction(sum(raw[name]['分数'] for name, _ in visible) * 100, coverage)
         minimum = min(Fraction(raw[name]['分数'] * 100, maximum) for name, maximum in visible)
@@ -166,6 +166,22 @@ def evaluate_quality(dimensions, defects=(), phenomena=()):
     numeric = score_band(final)[1]
     passed = grade in ('符合', '非常符合')
     goal = '已达到' if passed else grade if grade in ('无法评分', '可见项参考分') else '未达到'
+    def exact(value):
+        return None if value is None else {'numerator': value.numerator, 'denominator': value.denominator}
+    calculation = {
+        'version': 1, 'raw_total': sum(raw[name]['分数'] for name, _ in visible),
+        'visible_weight': coverage, 'visible_count': len(visible), 'sufficient': sufficient,
+        'base_exact': exact(exact_base), 'minimum_exact': exact(minimum),
+        'combined_exact': exact(combined), 'base_percent': BASE_PERCENT, 'minimum_percent': MINIMUM_PERCENT,
+        'rounding': 'half_up', 'before_cap': before_cap, 'final': final,
+        'critical_cap': CRITICAL_SCORE_CAP if critical else None,
+        'pass_score': PASS_SCORE, 'pass_minimum': PASS_MINIMUM,
+        'excellent_score': EXCELLENT_SCORE, 'excellent_minimum': EXCELLENT_MINIMUM,
+        'minimum_visible_count': MIN_VISIBLE_DIMENSIONS, 'minimum_visible_weight': MIN_VISIBLE_WEIGHT,
+        'axes': [{'name': name, 'raw': raw[name]['分数'], 'maximum': maximum,
+                  'normalized_exact': exact(None if raw[name]['分数'] is None else Fraction(raw[name]['分数'] * 100, maximum))}
+                 for name, maximum in DIMENSIONS],
+    }
     return result, {'分数': final, '基础分': base, '短板惩罚': penalty,
                     '限分前得分': before_cap, '关键缺陷扣分': critical_penalty,
                     '关键缺陷': critical, '分数上限': CRITICAL_SCORE_CAP if critical else None,
@@ -176,7 +192,7 @@ def evaluate_quality(dimensions, defects=(), phenomena=()):
                     '未评分维度': incomplete, '可评维度数': len(visible), '可评权重': coverage,
                     '评价范围': '可见项目外观参考' if incomplete else '六维外观教学评价',
                     '评分类型': ('可见项参考分' if sufficient else '无法评分') if incomplete else '短板约束综合分',
-                    '评分版本': RUBRIC_VERSION}
+                    '评分版本': RUBRIC_VERSION, '计算明细': calculation}
 
 
 def evaluate_dimensions(dimensions):

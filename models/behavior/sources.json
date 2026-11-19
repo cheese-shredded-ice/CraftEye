@@ -1,0 +1,23 @@
+[
+  {
+    "path": "models/behavior/yolo11n-pose.pt",
+    "url": "https://github.com/ultralytics/assets/releases/download/v8.3.0/yolo11n-pose.pt",
+    "sha256": "869e83fcdffdc7371fa4e34cd8e51c838cc729571d1635e5141e3075e9319dc0",
+    "license": "AGPL-3.0",
+    "role": "pose"
+  },
+  {
+    "path": "models/behavior/yolo11n.pt",
+    "url": "https://github.com/ultralytics/assets/releases/download/v8.3.0/yolo11n.pt",
+    "sha256": "0ebbc80d4a7680d14987a577cd21342b65ecfd94632bd9a8da63ae6417644ee1",
+    "license": "AGPL-3.0",
+    "role": "phone"
+  },
+  {
+    "path": "models/behavior/welding-ppe.pt",
+    "url": "https://raw.githubusercontent.com/ayoub-elkhader/ergonomie-4.0-ppe-detection/main/weights/best.pt",
+    "sha256": "e0fad73ab4778d67dca414493cea5513a021e8a8853824e52e07dcedb8e71202",
+    "license": "AGPL-3.0",
+    "role": "welding PPE"
+  }
+]

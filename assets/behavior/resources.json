@@ -1,0 +1,44 @@
+[
+  {
+    "path": "models/behavior/yolo11n-pose.pt",
+    "url": "https://github.com/ultralytics/assets/releases/download/v8.3.0/yolo11n-pose.pt",
+    "sha256": "869e83fcdffdc7371fa4e34cd8e51c838cc729571d1635e5141e3075e9319dc0",
+    "license": "AGPL-3.0",
+    "role": "pose"
+  },
+  {
+    "path": "models/behavior/yolo11n.pt",
+    "url": "https://github.com/ultralytics/assets/releases/download/v8.3.0/yolo11n.pt",
+    "sha256": "0ebbc80d4a7680d14987a577cd21342b65ecfd94632bd9a8da63ae6417644ee1",
+    "license": "AGPL-3.0",
+    "role": "phone"
+  },
+  {
+    "path": "models/behavior/welding-ppe.pt",
+    "url": "https://raw.githubusercontent.com/ayoub-elkhader/ergonomie-4.0-ppe-detection/main/weights/best.pt",
+    "sha256": "e0fad73ab4778d67dca414493cea5513a021e8a8853824e52e07dcedb8e71202",
+    "license": "AGPL-3.0",
+    "role": "welding PPE"
+  },
+  {
+    "path": "outputs/behavior-samples/workshop-demo.mp4",
+    "url": "https://raw.githubusercontent.com/ayoub-elkhader/ergonomie-4.0-ppe-detection/main/videos/demo_atelier.mp4",
+    "sha256": "5773860aa9d933cada104749e10e9b99e5c0317ce11c5c49ae723f3e174c66c6",
+    "license": "Upstream workshop demo; consent not documented; local testing only",
+    "role": "test video"
+  },
+  {
+    "path": "outputs/behavior-samples/mig-welding.webm",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/a/af/MIG_welding.webm?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "sha256": "3cfeb324e3aa4e4e212732d9729af2936c344adea1547f1f29586233ad507e93",
+    "license": "CC BY 3.0; Chris MacDonald",
+    "role": "test video"
+  },
+  {
+    "path": "outputs/behavior-samples/college-welding.mp4",
+    "url": "https://archive.org/download/hcectvky-EC3_Welding_Pathway_2026/EC3_Welding_Pathway_2026.mp4",
+    "sha256": "31fa51e3e7bf964336402e947141d629be75f600cade9099276c8f1d94e9d807",
+    "license": "Archive.org public access; local testing only, no redistribution license stated",
+    "role": "test video"
+  }
+]

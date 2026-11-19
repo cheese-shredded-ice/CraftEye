@@ -56,7 +56,7 @@ def connect(path=None):
 
 REPORT_FIELDS = {'run_id', 'provider', 'model', 'learning_goal', 'feedback_version',
                  'focus_confidence_threshold', 'focus_regions', 'generated_at', 'score',
-                 'dimensions', 'rubric_version', 'dimension_weights', 'sections', 'usage', 'note'}
+                 'dimensions', 'rubric_version', 'dimension_weights', 'sections', 'usage', 'note', 'audit'}
 INPUT_FIELDS = {'source_id', 'source_type', 'detections', 'manual_observations',
                 'process_context', 'learning_goal', 'original_size'}
 

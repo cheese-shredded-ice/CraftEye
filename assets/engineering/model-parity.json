@@ -1,0 +1,9 @@
+{
+  "images": 126,
+  "threshold_checks": 150,
+  "matched_detections": 462,
+  "max_box_difference_pixels": 0.000732421875,
+  "max_confidence_difference": 3.159046173095703e-06,
+  "seconds": 36.8,
+  "all_detection_counts_and_classes_match": true
+}

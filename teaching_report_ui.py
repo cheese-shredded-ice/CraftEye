@@ -10,6 +10,7 @@ from defect_references import REFERENCES, REFERENCE_DIR, matched_references
 from score_ui import score_html
 from scoring import DIMENSIONS, SCORE_FORMULA, score_band
 from dashboard_visuals import icon_html
+from analysis_audit import audit_html
 
 
 def dimensions_html(dimensions=None, formula=None):
@@ -88,11 +89,12 @@ def original_url(original):
     return 'data:image/jpeg;base64,' + base64.b64encode(buffer.getvalue()).decode('ascii')
 
 
-def report_html(report, original, view='改进建议'):
+def report_html(report, original, view='改进建议', inputs=None):
     sections = report['sections']
     length = sum(len(item) for items in sections.values() for item in items)
     density = ' dense' if length > 150 or len(sections.get('缺陷类型', [])) > 2 else ''
     parts = [f'<div class="teaching-report{density}">', score_html(report['score'])]
+    parts.append(audit_html(report, original, inputs))
     if view == '六维评分':
         formula = (SCORE_FORMULA if report['score']['分数'] is not None
                    else '可评项目不足，暂不计算总分')
