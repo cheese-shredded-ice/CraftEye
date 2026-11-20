@@ -21,11 +21,9 @@ def install_layout():
 def render_brand():
     assets = Path(__file__).with_name('assets').joinpath('dashboard')
     logo = base64.b64encode(assets.joinpath('crafteye-logo.png').read_bytes()).decode()
-    baic = base64.b64encode(assets.joinpath('baic-logo.svg').read_bytes()).decode()
     st.html('<div class="dashboard-brand"><div class="brand-logo">'
             f'<img src="data:image/png;base64,{logo}" alt="CraftEye 智能焊接评估标志">'
-            '<h1>数智评鉴系统</h1></div><div class="partner-logo">'
-            f'<img src="data:image/svg+xml;base64,{baic}" alt="BAIC 标志"></div></div>')
+            '<h1>数智评鉴系统</h1></div></div>')
 
 
 def section_heading(title, icon='analysis'):

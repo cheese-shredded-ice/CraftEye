@@ -24,7 +24,6 @@ const BrandInner:React.FC<BrandProps> = ({closing=false,seconds}) => {
       <h1 style={{color:'#f1fcff',fontSize:106,letterSpacing:12,fontWeight:700,margin:'50px 0 30px'}}>数智评鉴系统</h1>
       <div style={{height:3,width:interpolate(frame,[.5*fps,2*fps],[0,660],clamp),background:'linear-gradient(90deg,transparent,#4be5d5,transparent)'}}/>
       <div style={{marginTop:36,color:'#79b9ca',fontSize:28,letterSpacing:8}}>CraftEye · V2.1</div>
-      {closing && <CanvasImage src={staticFile('baic.svg')} style={{width:230,height:95,objectFit:'contain',marginTop:35,padding:12,background:'#f5fcff',borderRadius:12}}/>}
     </AbsoluteFill>
   </AbsoluteFill>;
 };

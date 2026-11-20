@@ -6,6 +6,7 @@ import json
 import os
 from pathlib import Path
 import shutil
+import subprocess
 import sys
 import zipfile
 
@@ -46,7 +47,7 @@ def copy_file(source, target):
     shutil.copy2(source, target)
 
 
-def build(destination, lite=False):
+def build(destination, lite=False, version='4.1'):
     if destination.exists():
         raise RuntimeError(f'Destination already exists: {destination}')
     destination.mkdir(parents=True)
@@ -99,15 +100,16 @@ def build(destination, lite=False):
     model_name = 'welding.onnx' if lite else 'welding.pt'
     for name in [model_name,'source.json','author-README.md']:
         copy_file(ROOT/'models'/name,destination/'models'/name)
-    samples = sorted((ROOT/'dataset/test/images').glob('*.jpg'))
-    # Include enough examples for first use; no training data download is needed.
-    chosen = samples[::max(1,len(samples)//8)][:8]
-    for sample in chosen:
-        copy_file(sample,destination/'dataset/test/images'/sample.name)
+    # Ship the browser's three splits and labels; no first-run dataset download.
+    shutil.copytree(ROOT/'dataset', destination/'dataset',
+                    ignore=shutil.ignore_patterns('__pycache__', '*.cache'))
+    chosen = list((destination/'dataset').glob('*/images/*.jpg'))
     copy_file(ROOT/'.streamlit/config.toml',destination/'.streamlit/config.toml')
     (destination/'.streamlit/secrets.example.toml').write_text('DASHSCOPE_API_KEY = ""\n',encoding='utf-8')
     for name in ['launcher.py','使用说明.txt']:
         copy_file(ROOT/'packaging/windows'/name,destination/name)
+    instructions = destination/'使用说明.txt'
+    instructions.write_text(instructions.read_text(encoding='utf-8').replace('{version}', version), encoding='utf-8')
     if lite:
         instructions=destination/'使用说明.txt'
         instructions.write_text(instructions.read_text(encoding='utf-8').replace('64 位便携版','64 位精简便携版（自带运行环境，无需下载）').replace('3GB 可用磁盘空间','1.5GB 可用磁盘空间')+
@@ -119,13 +121,15 @@ def build(destination, lite=False):
             'if not exist "%~dp0runtime\\pythonw.exe" (\r\n'
             '  echo Please extract the complete ZIP before starting.\r\n  pause\r\n  exit /b 1\r\n)\r\n'
             'start "" "%~dp0runtime\\pythonw.exe" -I -X utf8 "%~dp0launcher.py"'+argument+'\r\n').encode('ascii'))
-    manifest = {'product':'CraftEye','version':'2.1','platform':'Windows x64','python':sys.version,
+    revision = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip()
+    manifest = {'product':'CraftEye','version':version,'source_commit':revision,'platform':'Windows x64','python':sys.version,
                 'packages':{name:package.version for name,package in sorted(packages.items())},
                 'edition':'lite' if lite else 'full', 'inference_backend':'ONNX Runtime CPU' if lite else 'PyTorch CPU',
                 'trimmed_development_bytes':removed_bytes,
                 'model_file':model_name,
                 'model_sha256':hashlib.file_digest((destination/'models'/model_name).open('rb'),'sha256').hexdigest(),
-                'api_key_included':False,'history_included':False,'sample_count':len(chosen)}
+                'api_key_included':False,'history_included':False,'bundled_training_records':60,
+                'dataset_labels_included':True,'sample_count':len(chosen)}
     (destination/'package-manifest.json').write_text(json.dumps(manifest,ensure_ascii=False,indent=2),encoding='utf-8')
     print(f'BUILD COMPLETE {destination}',flush=True)
 
@@ -152,12 +156,15 @@ def archive(destination, include_api_key=False):
 
 if __name__=='__main__':
     parser=argparse.ArgumentParser()
-    parser.add_argument('--output',type=Path,default=ROOT/'outputs/release/CraftEye-v2.1-Windows-x64')
+    parser.add_argument('--output',type=Path)
+    parser.add_argument('--version',default='4.1')
     parser.add_argument('--archive-only',action='store_true')
     parser.add_argument('--lite',action='store_true')
     parser.add_argument('--include-api-key',action='store_true',help='Include an explicitly authorized preset secrets.toml when archiving.')
     args=parser.parse_args()
+    if args.output is None:
+        args.output = ROOT/'outputs/release'/f'CraftEye-v{args.version}-{"Lite-" if args.lite else ""}Windows-x64'
     if args.archive_only:
         archive(args.output.resolve(),include_api_key=args.include_api_key)
     else:
-        build(args.output.resolve(),lite=args.lite)
+        build(args.output.resolve(),lite=args.lite,version=args.version)

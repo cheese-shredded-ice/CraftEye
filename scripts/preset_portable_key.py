@@ -33,7 +33,7 @@ def main():
 综合分析需要联网调用通义千问，调用费用计入预设密钥所属账号。
 如需更换账号，可在右上角“设置”填写自己的 API Key；留空使用预设。
 预设保存在 .streamlit/secrets.toml，随本安装包交付。
-本包不包含历史识别记录。
+本包不包含本机私人识别记录，首次启动会自动载入随包附带的 60 条训练记录。
 
 '''+text[end:]
     instructions.write_text(text,encoding='utf-8')

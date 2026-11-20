@@ -34,6 +34,5 @@ with sync_playwright() as p:
     (PUBLIC/'regions.json').write_text(json.dumps(boxes,ensure_ascii=False,indent=2),encoding='utf-8')
     browser.close()
 shutil.copy(ROOT/'assets/dashboard/crafteye-logo.png',PUBLIC/'logo.png')
-shutil.copy(ROOT/'assets/dashboard/baic-logo.svg',PUBLIC/'baic.svg')
 shutil.copy(ROOT/'assets/dashboard/welding-banner.webp',PUBLIC/'welding.webp')
 print('Captured 5 frames from real records and current UI; no cloud API calls.')
