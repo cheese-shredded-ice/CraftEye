@@ -183,6 +183,47 @@ class RecognitionHistoryTest(unittest.TestCase):
         self.assertEqual(len(load_records(self.path)), 1)
         self.assertIn('keep', load_record_images(['keep'], self.path))
 
+    def test_display_numbers_close_gaps_across_table_chart_details_and_export(self):
+        import csv
+        from growth_chart import growth_data
+        from history_ui import export_csv
+        original = Image.new('RGB', (20, 20), 'blue')
+        for i in range(8):
+            save_record(str(i), 'image', report(70 + i), self.path, original=original)
+        before = {r['run_id']: r['sequence'] for r in load_records(self.path)}
+        delete_records(['0', '3', '6'], self.path)
+        # Idempotent saves can consume database IDs too; neither kind of gap
+        # should appear in the user's consecutive record numbers.
+        save_record('7', 'image', report(), self.path)
+        save_record('new', 'camera', report(95), self.path, original=original)
+        rows = load_records(self.path)
+        self.assertEqual([r['run_id'] for r in rows], ['1', '2', '4', '5', '7', 'new'])
+        self.assertEqual([r['display_sequence'] for r in rows], list(range(1, 7)))
+        for row in rows[:-1]:
+            self.assertEqual(row['sequence'], before[row['run_id']])
+        self.assertEqual([r['display_sequence'] for r in reversed(rows)], [6, 5, 4, 3, 2, 1])
+        self.assertEqual([r['记录序号'] for r in growth_data(rows)], list(range(1, 7)))
+        exported = list(csv.DictReader(io.StringIO(export_csv(rows).decode('utf-8-sig'))))
+        self.assertEqual([int(r['序号']) for r in exported], list(range(1, 7)))
+        self.assertEqual([r['display_sequence'] for r in load_picker_records(self.path)], [6, 5, 4, 3, 2, 1])
+        for row in rows:
+            detail = load_record_detail(row['run_id'], self.path)
+            self.assertEqual(detail['display_sequence'], row['display_sequence'])
+            self.assertEqual(detail['analysis']['score']['分数'], row['score'])
+        delete_records([r['run_id'] for r in rows], self.path)
+        save_record('restart', 'image', report(), self.path)
+        self.assertEqual(load_records(self.path)[0]['display_sequence'], 1)
+
+    def test_picker_numbers_are_assigned_before_filtering_and_limit(self):
+        image = Image.new('RGB', (5, 5))
+        save_record('training', 'training', report(), self.path, original=image)
+        save_record('no-image', 'image', report(), self.path)
+        for i in range(52):
+            save_record(str(i), 'image', report(), self.path, original=image)
+        picker = load_picker_records(self.path)
+        self.assertEqual(len(picker), 50)
+        self.assertEqual([r['display_sequence'] for r in picker], list(range(54, 4, -1)))
+
 
 if __name__ == '__main__':
     unittest.main()

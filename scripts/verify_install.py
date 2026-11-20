@@ -15,6 +15,7 @@ from download_dataset import matches
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--evaluate', action='store_true')
+    parser.add_argument('--output', type=Path, default=ROOT / 'verification.json')
     args = parser.parse_args()
     import torch
     import torchvision
@@ -68,7 +69,8 @@ def main():
                           'per_class_mAP50_95': [float(v) for v in metrics.box.maps]}
         (ROOT / 'models' / 'metrics.json').write_text(json.dumps(metrics_report, indent=2), encoding='utf-8')
         report['test_metrics'] = metrics_report
-    (ROOT / 'verification.json').write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding='utf-8')
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    args.output.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding='utf-8')
     print(json.dumps(report, ensure_ascii=False, indent=2))
 
 

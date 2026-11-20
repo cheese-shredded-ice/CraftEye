@@ -9,6 +9,11 @@ from scoring import RUBRIC_VERSION
 
 HISTORY_DB = Path(__file__).resolve().parent / 'outputs' / 'recognition-history.sqlite3'
 
+# Number all surviving records before filtering or pagination. Keep the stored
+# primary key unchanged so deletion and saved report identities remain stable.
+ORDERED_HISTORY = '''SELECT *, ROW_NUMBER() OVER (ORDER BY sequence) AS display_sequence
+                     FROM recognition_history'''
+
 
 def connect(path=None):
     path = Path(path or HISTORY_DB)
@@ -49,6 +54,10 @@ def connect(path=None):
         schema_version INTEGER NOT NULL,
         report_json TEXT NOT NULL,
         inputs_json TEXT NOT NULL
+    )''')
+    connection.execute('''CREATE TABLE IF NOT EXISTS recognition_metadata (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL
     )''')
     connection.commit()
     return connection
@@ -106,11 +115,12 @@ def save_record(run_id, source_type, report, path=None, *, annotated=None, origi
 def load_picker_records(path=None):
     """The image picker is original-only; never pass an old overlay back to YOLO."""
     with closing(connect(path)) as connection:
-        return [dict(row) for row in connection.execute('''
-            SELECT h.run_id, h.sequence, h.generated_at, h.defects,
+        return [dict(row) for row in connection.execute(f'''
+            SELECT h.run_id, h.sequence, h.display_sequence, h.generated_at, h.defects,
                    (o.run_id IS NOT NULL) AS has_original
-            FROM recognition_history h
+            FROM ({ORDERED_HISTORY}) h
             JOIN recognition_originals o ON o.run_id=h.run_id
+            WHERE h.source_type != 'training'
             ORDER BY h.sequence DESC LIMIT 50''')]
 
 
@@ -119,7 +129,7 @@ def load_picker_image(run_id, path=None):
         row = connection.execute('''SELECT o.original_png AS image
             FROM recognition_history h
             JOIN recognition_originals o ON o.run_id=h.run_id
-            WHERE h.run_id=?''', (run_id,)).fetchone()
+            WHERE h.run_id=? AND h.source_type != 'training' ''', (run_id,)).fetchone()
         return row['image'] if row else None
 
 
@@ -142,7 +152,7 @@ def load_original_images(run_ids, path=None):
 
 def load_record_detail(run_id, path=None):
     with closing(connect(path)) as connection:
-        record = connection.execute('SELECT * FROM recognition_history WHERE run_id=?', (run_id,)).fetchone()
+        record = connection.execute(f'SELECT * FROM ({ORDERED_HISTORY}) WHERE run_id=?', (run_id,)).fetchone()
         if record is None:
             return None
         saved = connection.execute('SELECT * FROM recognition_reports WHERE run_id=?', (run_id,)).fetchone()
@@ -162,7 +172,7 @@ def load_record_detail(run_id, path=None):
             report.update(dimensions=json.loads(scoring['dimensions']),
                           dimension_weights=json.loads(scoring['weights']), rubric_version=scoring['rubric_version'])
         inputs = {'source_type': record['source_type']}
-    return {'run_id': run_id, 'sequence': record['sequence'], 'analysis': report, 'inputs': inputs,
+    return {'run_id': run_id, 'sequence': record['sequence'], 'display_sequence': record['display_sequence'], 'analysis': report, 'inputs': inputs,
             'complete_snapshot': bool(saved), 'schema_version': saved['schema_version'] if saved else 0,
             'original_png': original[0] if original else None, 'annotated_png': annotated[0] if annotated else None}
 
@@ -178,7 +188,7 @@ def load_record_images(run_ids, path=None, *, full_size=False):
 
 def load_records(path=None):
     with closing(connect(path)) as connection:
-        records = [dict(row) for row in connection.execute('SELECT * FROM recognition_history ORDER BY sequence')]
+        records = [dict(row) for row in connection.execute(f'{ORDERED_HISTORY} ORDER BY sequence')]
         scoring = {row['run_id']: dict(row) for row in connection.execute('SELECT * FROM recognition_scoring')}
         assessments = {row['run_id']: json.loads(row['score_json'])
                        for row in connection.execute('SELECT * FROM recognition_assessment')}

@@ -134,6 +134,7 @@ def main():
             assert exported['analysis']['score']['计算明细']['final']==73
             assert len(exported['analysis']['audit']['images'])==2+len(exported['analysis']['focus_regions'])
             page.mouse.click(900,35)
+            page.get_by_role('button',name='设置',exact=True).click()
             page.get_by_role('button',name='技术与验证',exact=True).click()
             dialog=page.get_by_role('dialog');expect(dialog).to_be_visible()
             expect(dialog.locator('.architecture-flow>div')).to_have_count(5)

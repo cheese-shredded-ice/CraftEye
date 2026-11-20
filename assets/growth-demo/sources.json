@@ -1,0 +1,362 @@
+[
+  {
+    "practice": 1,
+    "file": "practice-01.jpg",
+    "source": "dataset/test/images/poor-Welding-Images_52_jpeg.rf.c581b9cc8ce08cae3120e82b201d0efb.jpg",
+    "sha256": "98c6434cf03fe7aeaf398dfcbc57b78d65eb14576d359a01955166a6372d6339"
+  },
+  {
+    "practice": 2,
+    "file": "practice-02.jpg",
+    "source": "dataset/test/images/bad_weld_vid177_jpeg.rf.5bf77a9a97b327dc04a8575ba9375aea.jpg",
+    "sha256": "417e25dfa4103968d2239d09d9010cc85f8aff0510f6c9b3da5986f5d55fb111"
+  },
+  {
+    "practice": 3,
+    "file": "practice-03.jpg",
+    "source": "dataset/test/images/SampleV2_2_mp4-59_jpg.rf.5e6543b79b7abac05cf8005d24f61eb5.jpg",
+    "sha256": "cab913ac3909ecc52c261e7a073acaf0d6841be74f7b510b3f23d774def8bb78"
+  },
+  {
+    "practice": 4,
+    "file": "practice-04.jpg",
+    "source": "dataset/test/images/imagerty4ys_jpeg_jpg.rf.63bb94db9a6bb65e4f87abe7f1eae488.jpg",
+    "sha256": "01313d97a7ecac86d3fa464bb82b84d0cf8b2f4d2d8abe7f78d78b94239f19dc"
+  },
+  {
+    "practice": 5,
+    "file": "practice-05.jpg",
+    "source": "dataset/train/images/badly-welded-rusty-metal-bad-weld-corner-132405924_jpeg.rf.2b2bcbb4a5666fbabe68dcb07b95da4e.jpg",
+    "sha256": "c31c4451e10947be5683940dbb92f4009ca46fee26218de0bdbcb9a23dc54e5c"
+  },
+  {
+    "practice": 6,
+    "file": "practice-06.jpg",
+    "source": "dataset/test/images/mig-good-welds_11_jpeg_jpg.rf.c488ebd180387fc1f20114bed459fbb5.jpg",
+    "sha256": "0ffa99a540728d4ef39005d63ea08aa99c924f40b920f87d0385f95f0aa9b1d2"
+  },
+  {
+    "practice": 7,
+    "file": "practice-07.jpg",
+    "source": "dataset/train/images/download_jpeg.rf.387779d57c5487141facb913b1ece169.jpg",
+    "sha256": "af30a5d744bedfdad23c313d30cc0f1d23d952713c8c6db5ad5b0075cbfa6923"
+  },
+  {
+    "practice": 8,
+    "file": "practice-08.jpg",
+    "source": "dataset/test/images/Screenshot-2022-12-05-223424_jpeg.rf.3de790d465fbb0428d1066ab0ec33daf.jpg",
+    "sha256": "7864d8918c50b745aeab87f9cbce38f1e7bd1d16dcc8c504c0ee583cce57a57a"
+  },
+  {
+    "practice": 9,
+    "file": "practice-09.jpg",
+    "source": "dataset/test/images/bad_weld_vid643_jpeg_jpg.rf.4198326c850625e57e8851f1da196032.jpg",
+    "sha256": "0443a1eff889e3afd8a128645bc76938ddc01d3de02d68016cd8a73e8a5b6ed7"
+  },
+  {
+    "practice": 10,
+    "file": "practice-10.jpg",
+    "source": "dataset/test/images/bad_weld_vid397_jpeg_jpg.rf.6aacbe170c5956e56b1024f24d60c60c.jpg",
+    "sha256": "1949a50a0f66389afefe69ddc437f4b91b145aa1bad9ea3e88d6047120990f95"
+  },
+  {
+    "practice": 11,
+    "file": "practice-11.jpg",
+    "source": "dataset/train/images/good_weld_vid142_jpeg.rf.582a32e52fa1ec97fc597b527dd23cf9.jpg",
+    "sha256": "fdc97916a2e6ccd32f3379d7d9c88b65d60b51ba1b345e43757127dfe05f01b7"
+  },
+  {
+    "practice": 12,
+    "file": "practice-12.jpg",
+    "source": "dataset/train/images/bad_weld_vid474_jpeg_jpg.rf.03e7630f541a19c7a096edae34043b5c.jpg",
+    "sha256": "a8f4ddb9504b2daeb6c03f5baac040314cb82b2c560fe0c2666ce108a0987ecb"
+  },
+  {
+    "practice": 13,
+    "file": "practice-13.jpg",
+    "source": "dataset/test/images/bad_weld_vid166_jpeg_jpg.rf.525052424b574a43de777660f6cb2d10.jpg",
+    "sha256": "f60a116b0461ed7394dda16d620230a73fb904b2128898bd96f73c85803427cd"
+  },
+  {
+    "practice": 14,
+    "file": "practice-14.jpg",
+    "source": "dataset/test/images/Screenshot-2022-12-05-223445_jpeg.rf.a835025488cff5c8564c4d16df1b7ad6.jpg",
+    "sha256": "6beaa66d95e3f3abb8c84e4aad6c5dd830977ef3973e03aef68e0a89744519b9"
+  },
+  {
+    "practice": 15,
+    "file": "practice-15.jpg",
+    "source": "dataset/test/images/bad_weld_vid88_jpeg.rf.dbf17e5df452b1a7910a87f6442f0341.jpg",
+    "sha256": "1c23d1036894b5fdd1ec287ede9c75fd30bcb76cf86458e4699fb734330f7196"
+  },
+  {
+    "practice": 16,
+    "file": "practice-16.jpg",
+    "source": "dataset/test/images/crack-welding-images_17_jpeg_jpg.rf.ff570716da313da84983bc629ae7e331.jpg",
+    "sha256": "6f6530ed4b169061e5d6aa21303dfbfb21ef0d02bb750181b7dd8df7baa566a6"
+  },
+  {
+    "practice": 17,
+    "file": "practice-17.jpg",
+    "source": "dataset/test/images/02fd0af7-51ab46bb-c13_jpg.rf.7de08cd3b264d9098d09f5fe6d21c959.jpg",
+    "sha256": "dca734f3287f823ab85fbfb3c85a4a04b4acb43046b4dbc39af53cafc8e85f47"
+  },
+  {
+    "practice": 18,
+    "file": "practice-18.jpg",
+    "source": "dataset/test/images/porosity-worm-hole-weld-defect-welding-process-flux-cored-arc-fcaw-204492534_jpeg_jpg.rf.c5201d1c888e3ffa1fded39930503d32.jpg",
+    "sha256": "abf13af210c5d03a448fc4040e40da33cd61c1b3ffc1b292f456fd48178486e0"
+  },
+  {
+    "practice": 19,
+    "file": "practice-19.jpg",
+    "source": "dataset/test/images/bad_weld_vid368_jpeg.rf.513a43066292f2b16b8428284df2b472.jpg",
+    "sha256": "9089328f8a65c3593eaed33f1412169038ac142a8fb1604df769fae38be01770"
+  },
+  {
+    "practice": 20,
+    "file": "practice-20.jpg",
+    "source": "dataset/test/images/good_weld_vid469_jpeg.rf.bb8d4104e49f8bd79aef34b7ed48b49f.jpg",
+    "sha256": "2bfcaeb695350ca9283d5e6689ef7e91290051d3da00a1a2cbfa4bdc7cd6faf4"
+  },
+  {
+    "practice": 21,
+    "file": "practice-21.jpg",
+    "source": "dataset/test/images/Screenshot-2022-12-05-223504_jpeg.rf.f6c1d1d819ba7212516d5da2471bdb04.jpg",
+    "sha256": "89c6437b13ca5384f8fb60fe406348ad56ec5652691e93c2758c511a08da40b7"
+  },
+  {
+    "practice": 22,
+    "file": "practice-22.jpg",
+    "source": "dataset/test/images/Screenshot-2022-12-05-224335_jpeg_jpg.rf.bcfe0035e76676a1f9056aea47c18999.jpg",
+    "sha256": "37f926d1910d1fb1276119b9368e1efebd5fbf2871a91453e15aabc805b83083"
+  },
+  {
+    "practice": 23,
+    "file": "practice-23.jpg",
+    "source": "dataset/train/images/carbon-steel-good-welds_13_jpeg.rf.7c790e5fbbdd25c534425a85b677dc04.jpg",
+    "sha256": "91e80aebdf94b960952849864965894ea455a9bfa5f780e25fdecb4dcad048a1"
+  },
+  {
+    "practice": 24,
+    "file": "practice-24.jpg",
+    "source": "dataset/train/images/bad_weld_vid577_jpeg_jpg.rf.08b2d6d760c1892144b01726aee07426.jpg",
+    "sha256": "c533e1b618a2ea039754d9cc0198a953a08d15da1e7323c2ddebcb49f703bdfc"
+  },
+  {
+    "practice": 25,
+    "file": "practice-25.jpg",
+    "source": "dataset/test/images/bad_weld_vid84_jpeg_jpg.rf.f148c4898a835b73a3eb087d905ed8f3.jpg",
+    "sha256": "32fd38182ec493d93f3376aa574cf1f1ef05b1ecb6471e45899e268b1865fb72"
+  },
+  {
+    "practice": 26,
+    "file": "practice-26.jpg",
+    "source": "dataset/train/images/ac52ea0d-7ff970bf-c7_jpg.rf.32669ea9d81018355aceaeaf71a735b3.jpg",
+    "sha256": "bce3fe8086488fcd8ccd76eb749932126785b1eed73acfbdb98ba57276608c1c"
+  },
+  {
+    "practice": 27,
+    "file": "practice-27.jpg",
+    "source": "dataset/train/images/fillet-weld-rubbed-angle-grinder-destructive-method-checking-steel-connections-fillet-weld-rubbed-154821778_jpeg.rf.8a33714cf45952f2ac015f485fea894d.jpg",
+    "sha256": "2f79b940ae2d96735012f4c61b31f58eb5863e7cd688e04e38bf6aed828267d0"
+  },
+  {
+    "practice": 28,
+    "file": "practice-28.jpg",
+    "source": "dataset/test/images/Screenshot-2022-12-05-230257_jpeg_jpg.rf.b7d7eb8e010e48641638d6a878f9af61.jpg",
+    "sha256": "41f809cc6d20e74330918ab1c78bac64601c3be71ee4563418909b0529897abf"
+  },
+  {
+    "practice": 29,
+    "file": "practice-29.jpg",
+    "source": "dataset/train/images/55954f1b-bc09cedc-c18_jpg.rf.664c6f01aafeac2a159e0e7451bd6aea.jpg",
+    "sha256": "5b9fe9dcbdd5c24ba2347d29dbec659457b2e75e09a425c0e3ba1ef6755d3208"
+  },
+  {
+    "practice": 30,
+    "file": "practice-30.jpg",
+    "source": "dataset/test/images/Screenshot-2022-12-05-224056_jpeg.rf.0198544ad2d024d446a77d8f8c04ff12.jpg",
+    "sha256": "af9add31cd2f51d01b019cc78c70f52ff037526e31bba6809a02b9d8140a07c6"
+  },
+  {
+    "practice": 31,
+    "file": "practice-31.jpg",
+    "source": "dataset/test/images/Spatters-welding-images_30_jpeg_jpg.rf.ac1f61755f14395f6e5da156c7fd043f.jpg",
+    "sha256": "c50a5dd482b2b752c6fc3f42139a5d93be96bf5842906efaa64a16908d0f4906"
+  },
+  {
+    "practice": 32,
+    "file": "practice-32.jpg",
+    "source": "dataset/test/images/Good-Welding-images_30_jpeg.rf.4af312f6d3af2b9ec3a3c7814019f387.jpg",
+    "sha256": "11eaca71a04c656f34ea34138f6da1036a5769980e49d8a906dca1b9135019de"
+  },
+  {
+    "practice": 33,
+    "file": "practice-33.jpg",
+    "source": "dataset/test/images/Spatters-welding-images_9_jpeg_jpg.rf.a43f10bbaf404937f530d9c278654acb.jpg",
+    "sha256": "b185acebee0167bdaf57100735ab0cf67ed63ce4fd44df7098bd525fee249f6a"
+  },
+  {
+    "practice": 34,
+    "file": "practice-34.jpg",
+    "source": "dataset/test/images/Screenshot-2022-12-05-230149_jpeg.rf.9a609cc50aed07d1532d574bdfddd081.jpg",
+    "sha256": "e84a7e300aac8202a2c40798e1ef5fdf87f73109deb0fb8b03ab35329d69c1c7"
+  },
+  {
+    "practice": 35,
+    "file": "practice-35.jpg",
+    "source": "dataset/test/images/good_weld_vid189_jpeg_jpg.rf.33380af68fa3c4f459a81f26d1bdbcb9.jpg",
+    "sha256": "d0276aeac1051c068e4ba78dde40f3227537544c885ebee34f47349ce987fd42"
+  },
+  {
+    "practice": 36,
+    "file": "practice-36.jpg",
+    "source": "dataset/train/images/good-stick-welds_33_jpeg.rf.b2e880024089247b7c9875921d014ffd.jpg",
+    "sha256": "47843a980a8ff4ca99ef8bd64124ad937864e9dc3e2cea4ac33665ae1eb6a261"
+  },
+  {
+    "practice": 37,
+    "file": "practice-37.jpg",
+    "source": "dataset/test/images/good_weld_vid100_jpeg.rf.8119452a868f43e546f35a5c98975194.jpg",
+    "sha256": "cd66eaf7715f9a2701e0917e2e8360e360fed096b99330b8e163766a60e8b7e0"
+  },
+  {
+    "practice": 38,
+    "file": "practice-38.jpg",
+    "source": "dataset/train/images/good-stick-welds_44_jpeg.rf.792eaf29461eede254b4ec7a2e9b1456.jpg",
+    "sha256": "f736865c0bf50ba53bdf00baa6d65c0b5825b350e899eb204a35671136ec142a"
+  },
+  {
+    "practice": 39,
+    "file": "practice-39.jpg",
+    "source": "dataset/test/images/good_weld_vid274_jpeg.rf.b6f11d0f012275ef3823e747c05bb460.jpg",
+    "sha256": "31403cb789145e1763980189606a01aaa0e12932af283daf506faf21f9710aae"
+  },
+  {
+    "practice": 40,
+    "file": "practice-40.jpg",
+    "source": "dataset/train/images/good-stick-welds_38_jpeg.rf.e5d12500d2cca0fa98f1237110b9e25d.jpg",
+    "sha256": "3e1f70f2bb8ddb5f244e409dea386ad10cffbfb8d17fc92f6a128da6b18c09ef"
+  },
+  {
+    "practice": 41,
+    "file": "practice-41.jpg",
+    "source": "dataset/test/images/Good-Welding-images_33_jpeg.rf.0e3a517af5a8cc2a5ea0a02f5ed2fbab.jpg",
+    "sha256": "2f52c785774bc7c70b4dd94b04c9ca2087f5f0b0bd5fb11e5a10ebfd008599ff"
+  },
+  {
+    "practice": 42,
+    "file": "practice-42.jpg",
+    "source": "dataset/train/images/good-stick-welds_14_jpeg.rf.a447dbb4eb4d2dc83bef434d1497c988.jpg",
+    "sha256": "92e86a628a0a098639d3e1af755485c1dcbd179cffec5dec1f9530570e6acbde"
+  },
+  {
+    "practice": 43,
+    "file": "practice-43.jpg",
+    "source": "dataset/train/images/carbon-steel-good-welds_8_jpeg.rf.94aa1c04774f409843e433e9e4d559c5.jpg",
+    "sha256": "2f3e799c6bf35ed716925351f8c75de97008b91e4a58e28f2d032a97921ea740"
+  },
+  {
+    "practice": 44,
+    "file": "practice-44.jpg",
+    "source": "dataset/test/images/good-tig-welds_49_jpeg.rf.0a42f6bb041a139dc54f82c007c91b66.jpg",
+    "sha256": "b6d084b9b6c0422c27e949ad5cd5088b1f09100c1051da886ceb1e70d824de5a"
+  },
+  {
+    "practice": 45,
+    "file": "practice-45.jpg",
+    "source": "dataset/train/images/good-stick-welds_4_jpeg.rf.0cacf8919593c3e3b2e678d9c9073526.jpg",
+    "sha256": "0d98527f4508afbf3e0bf5ad5fdfd337107f9fcbe45f3263ba370eadc7015cf1"
+  },
+  {
+    "practice": 46,
+    "file": "practice-46.jpg",
+    "source": "dataset/train/images/ER8-2-_jpg.rf.f5b1a85bceb5a46ea4a3a9b6b2a5f513.jpg",
+    "sha256": "732663eb8f7a4f33ca10a2abe7ae442aa68ab9c48b711d71d68c51e1cbc8be91"
+  },
+  {
+    "practice": 47,
+    "file": "practice-47.jpg",
+    "source": "dataset/train/images/good-tig-welds_42_jpeg_jpg.rf.14ca30b1fa2f2ec062bd1626fbba2e11.jpg",
+    "sha256": "ed264fb68d76ebf2c45e199042cf3992668fcad9551012276ed58749d11dbff0"
+  },
+  {
+    "practice": 48,
+    "file": "practice-48.jpg",
+    "source": "dataset/train/images/carbon-steel-good-welds_10_jpeg.rf.792b32045b7cbc9466391ee069b4a274.jpg",
+    "sha256": "82ebd2f47e062889b121149fccb9bb097fb81e34e6f68ea7bb844cdbbc6c1015"
+  },
+  {
+    "practice": 49,
+    "file": "practice-49.jpg",
+    "source": "dataset/train/images/good-stick-welds_8_jpeg.rf.bb7e181e37954cd64de49d862105b8ca.jpg",
+    "sha256": "77f6f163702cf998f863a23e230347cbf62234cd5a953c6ae02d5f998f502e4e"
+  },
+  {
+    "practice": 50,
+    "file": "practice-50.jpg",
+    "source": "dataset/train/images/good-stick-welds_12_jpeg.rf.52f2453f268c1e014164290f8fa131f5.jpg",
+    "sha256": "8033a757c0179345fe3383c703acececdbc4ac0b746b4bbed70d139d038cf3ea"
+  },
+  {
+    "practice": 51,
+    "file": "practice-51.jpg",
+    "source": "dataset/test/images/good-tig-welds_3_jpeg.rf.c6afd4c75c9f0f8866e1d58bb2a2ae0d.jpg",
+    "sha256": "c2a0b8e17b583f57824a44f2dfecdb474f6c7bb0c9f0cf53cb1ae48917108378"
+  },
+  {
+    "practice": 52,
+    "file": "practice-52.jpg",
+    "source": "dataset/train/images/good-stick-welds_25_jpeg.rf.27648fe9f163430fd7d35fe3575e2848.jpg",
+    "sha256": "df654c31463e746a3bf374f849d797bdb99a3ed9704078eb200949d4d44fc457"
+  },
+  {
+    "practice": 53,
+    "file": "practice-53.jpg",
+    "source": "dataset/train/images/good-tig-welds_20_jpeg.rf.391332942a750bf73e355ba8c14baf03.jpg",
+    "sha256": "016f5b1c2de1d842ab6a599c5ae35837d39bb2a57596c1d6e9b9dda20b2d73b9"
+  },
+  {
+    "practice": 54,
+    "file": "practice-54.jpg",
+    "source": "dataset/train/images/good-tig-welds_39_jpeg.rf.0b71dc3a116f596ef26936822c8f63a1.jpg",
+    "sha256": "d93056b6b70c7ce8accffd9652b604a33626d2ba624cfd98d1ea7bef9a9d52c4"
+  },
+  {
+    "practice": 55,
+    "file": "practice-55.jpg",
+    "source": "dataset/test/images/good-tig-welds_32_png_jpg.rf.31e47557dc8768f6a9dd99627ca3a6e7.jpg",
+    "sha256": "bd57f47bf848c437435984d124fb96c39307fdb7510beaaff4c038bbbdd02f14"
+  },
+  {
+    "practice": 56,
+    "file": "practice-56.jpg",
+    "source": "dataset/train/images/good-tig-welds_14_jpeg.rf.3dd008e4965b3819f9d94bf08c061f78.jpg",
+    "sha256": "c24c2ce1f288e0df50fb7f1c261803a3789a92e423a4e1ffa3fd43fbda16fe10"
+  },
+  {
+    "practice": 57,
+    "file": "practice-57.jpg",
+    "source": "dataset/train/images/good-tig-welds_25_jpeg.rf.3ccf6fe869061bb315edf0f8dc5111bf.jpg",
+    "sha256": "132a97c59a3919d6dc96cbddd09ca41a7e7116aeb7f053cedefda8d37f884f13"
+  },
+  {
+    "practice": 58,
+    "file": "practice-58.jpg",
+    "source": "dataset/test/images/carbon-steel-good-welds_4_jpeg.rf.b6f85c08c46fa9d199f916958e5b957f.jpg",
+    "sha256": "5ed95d8fa9109f97b783bc92d9b68990021943de83376911cf9206749ed29175"
+  },
+  {
+    "practice": 59,
+    "file": "practice-59.jpg",
+    "source": "dataset/train/images/good-tig-welds_50_jpeg.rf.28a5f7a0aa7dd8b010c46f4b6c5b3f27.jpg",
+    "sha256": "87d657a16a2cf798f1931bbbd40976cc627e374802ebd71dd6a99af5cc97945a"
+  },
+  {
+    "practice": 60,
+    "file": "practice-60.jpg",
+    "source": "dataset/test/images/good-tig-welds_4_jpeg_jpg.rf.3e3a5bbd002257f6e3845eaecef98355.jpg",
+    "sha256": "8ce427fc193f0448504071e00a825f2ff8aee8ad618d9a9239436f45786b8b15"
+  }
+]

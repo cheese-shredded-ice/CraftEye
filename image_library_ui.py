@@ -24,7 +24,7 @@ def catalog():
         except ValueError:
             date = record['generated_at'][:16]
         options['history:'+record['run_id']] = {
-            'label':f'历史 #{record["sequence"]} · {date} · {defect}',
+            'label':f'历史 #{record["display_sequence"]} · {date} · {defect}',
             'run_id':record['run_id'], 'original':bool(record['has_original'])}
     return options
 

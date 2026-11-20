@@ -37,12 +37,16 @@ class AIConfig:
 
 
 def endpoint_url(value):
-    parsed = urlsplit(value.strip())
-    host = (parsed.hostname or '').lower()
+    try:
+        parsed = urlsplit(value.strip())
+        host = (parsed.hostname or '').lower()
+        port = parsed.port
+    except (ValueError, AttributeError):
+        raise AnalysisError('接口地址格式无效，请从百炼控制台复制完整地址。') from None
     allowed = host in {'dashscope.aliyuncs.com', 'dashscope-intl.aliyuncs.com', 'dashscope-us.aliyuncs.com'}
     allowed = allowed or (host.endswith('.maas.aliyuncs.com') and '{' not in host and '}' not in host)
     if (parsed.scheme != 'https' or not allowed or parsed.username or parsed.password
-            or parsed.query or parsed.fragment or parsed.port not in (None, 443)):
+            or parsed.query or parsed.fragment or port not in (None, 443)):
         raise AnalysisError('请填写百炼控制台提供的 HTTPS 接口地址，支持 DashScope 或工作空间专属 maas.aliyuncs.com 地址。')
     path = parsed.path.rstrip('/')
     if path.endswith('/chat/completions'):
@@ -71,7 +75,11 @@ def analysis_identity(original, annotated, rows, observations, context, config, 
     return digest.hexdigest()
 
 
-def make_payload(original, annotated, rows, observations, context, model, learning_goal=DEFAULT_LEARNING_GOAL):
+STREAM_INSTRUCTIONS = '''\n\n流式输出协议：请只输出NDJSON，每行一个JSON对象，不要Markdown。先按固定顺序逐项输出六行维度事件：{"type":"dimension","name":"成形质量","score":18,"reason":"焊道宽度均匀"}。name必须是六维名称之一，score为该项原始分整数或null。六个维度全部输出后，最后输出一行 {"type":"report","result":完整的最终JSON对象}。最终JSON必须遵守上文格式且与已发维度完全一致。只输出这些教学评价结果，不输出分析思维过程。'''
+
+
+def make_payload(original, annotated, rows, observations, context, model, learning_goal=DEFAULT_LEARNING_GOAL,
+                 *, stream=False):
     context = context.strip()
     if len(context) > 2000:
         raise AnalysisError('补充工艺信息请控制在 2000 字以内。')
@@ -90,7 +98,7 @@ def make_payload(original, annotated, rows, observations, context, model, learni
             'focus_regions': regions[:MAX_FOCUS_CROPS],
             'additional_high_confidence_regions_in_overview': regions[MAX_FOCUS_CROPS:],
             'box_coordinate_image_size': [original.width, original.height]}
-    content = [{'type': 'text', 'text': prompt + json.dumps(data, ensure_ascii=False)},
+    content = [{'type': 'text', 'text': prompt + (STREAM_INSTRUCTIONS if stream else '') + json.dumps(data, ensure_ascii=False)},
                {'type': 'text', 'text': '图1：原始图片（未绘制检测框）'}]
     for label, image in [('original', original), ('annotated', annotated)]:
         if label == 'annotated':
@@ -103,19 +111,116 @@ def make_payload(original, annotated, rows, observations, context, model, learni
         content.append({'type': 'text', 'text': f"图{index}：重点区域（原图裁剪，无检测框）" + json.dumps(region, ensure_ascii=False)})
         content.append({'type': 'image_url', 'image_url': {'url': 'data:image/jpeg;base64,' + base64.b64encode(image_bytes(crop)).decode('ascii')}})
     return {'model': model, 'messages': [{'role': 'user', 'content': content}],
-            'enable_thinking': False, 'stream': False, 'max_tokens': 2200}
+            'enable_thinking': False, 'stream': stream, 'max_tokens': 3000}
+
+
+def _stream_content(response, on_dimension):
+    """Consume OpenAI-compatible SSE and publish only validated rubric dimensions."""
+    buffer, full_text, final_result, received = '', '', None, set()
+    try:
+        # SSE is UTF-8 even when a server omits charset in Content-Type.
+        # Letting requests guess the encoding can corrupt Chinese rubric names.
+        lines = response.iter_lines(decode_unicode=False)
+    except (AttributeError, TypeError):
+        raise AnalysisError('分析服务不支持流式响应，请重试。') from None
+    for raw_line in lines:
+        if not raw_line:
+            continue
+        line = raw_line.decode('utf-8', errors='replace') if isinstance(raw_line, bytes) else raw_line
+        if not line.startswith('data:'):
+            continue
+        packet = line[5:].strip()
+        if packet == '[DONE]':
+            break
+        try:
+            chunk = json.loads(packet)
+            choice = chunk.get('choices', [{}])[0]
+            if choice.get('finish_reason') == 'length':
+                raise AnalysisError('分析结果被截断，未生成完整报告，请重试。')
+            delta = choice.get('delta', {}).get('content', '')
+        except (ValueError, KeyError, TypeError, IndexError, AttributeError):
+            continue
+        if not isinstance(delta, str):
+            continue
+        buffer += delta
+        full_text += delta
+        if len(full_text) > 40000:
+            raise AnalysisError('分析服务返回内容过长，请重试。')
+        while '\n' in buffer:
+            line, buffer = buffer.split('\n', 1)
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                event = json.loads(line)
+            except (ValueError, TypeError):
+                continue
+            if not isinstance(event, dict):
+                continue
+            if event.get('type') == 'dimension':
+                name, score, reason = event.get('name'), event.get('score'), event.get('reason')
+                maximum = dict(DIMENSIONS).get(name)
+                if (maximum is None or name in received or
+                        (score is not None and (type(score) is not int or not 0 <= score <= maximum)) or
+                        not isinstance(reason, str) or not reason.strip() or len(reason.strip()) > 24):
+                    continue
+                received.add(name)
+                on_dimension(name, {'分数': score, '理由': reason.strip()})
+            elif event.get('type') == 'report' and isinstance(event.get('result'), dict):
+                final_result = event['result']
+    tail = buffer.strip()
+    if tail:
+        try:
+            event = json.loads(tail)
+            if isinstance(event, dict) and event.get('type') == 'report' and isinstance(event.get('result'), dict):
+                final_result = event['result']
+            elif isinstance(event, dict) and event.get('type') == 'dimension':
+                name, score, reason = event.get('name'), event.get('score'), event.get('reason')
+                maximum = dict(DIMENSIONS).get(name)
+                if (maximum is not None and name not in received and
+                        (score is None or type(score) is int and 0 <= score <= maximum) and
+                        isinstance(reason, str) and 0 < len(reason.strip()) <= 24):
+                    received.add(name)
+                    on_dimension(name, {'分数': score, '理由': reason.strip()})
+        except (ValueError, TypeError):
+            pass
+    if final_result is None:
+        # Compatible endpoints may stream a single JSON document instead of NDJSON.
+        try:
+            candidate = json.loads(full_text.strip())
+            if isinstance(candidate, dict):
+                final_result = candidate
+        except (ValueError, TypeError):
+            pass
+    if final_result is None:
+        raise AnalysisError('分析服务连接中断，未收到完整评价结果，请重试。')
+    try:
+        final_dimensions = final_result['六维评分']
+        for name, _ in DIMENSIONS:
+            item = final_dimensions.get(name) if isinstance(final_dimensions, dict) else None
+            maximum = dict(DIMENSIONS).get(name)
+            if (name not in received and isinstance(item, dict)
+                    and (item.get('分数') is None or type(item.get('分数')) is int and 0 <= item.get('分数') <= maximum)
+                    and isinstance(item.get('理由'), str) and 0 < len(item['理由'].strip()) <= 24):
+                on_dimension(name, {'分数': item.get('分数'), '理由': item['理由'].strip()})
+    except (KeyError, AttributeError, TypeError):
+        pass
+    return final_result
 
 
 def parse_analysis(value):
-    if not isinstance(value, str) or len(value) > 30000:
+    if isinstance(value, dict):
+        result = value
+    elif isinstance(value, str) and len(value) <= 30000:
+        text = value.strip()
+        if text.startswith('```') and text.endswith('```'):
+            text = re.sub(r'^```(?:json)?\s*', '', text, count=1).removesuffix('```').strip()
+        try:
+            result = json.loads(text)
+        except (ValueError, TypeError):
+            raise AnalysisError('分析服务未返回完整的分类与教学报告，请重试；本地检测结果仍保留。') from None
+    else:
         raise AnalysisError('分析服务返回的内容无效或过长，请重试。')
-    text = value.strip()
-    if text.startswith('```') and text.endswith('```'):
-        text = re.sub(r'^```(?:json)?\s*', '', text, count=1).removesuffix('```').strip()
-    try:
-        result = json.loads(text)
-    except (ValueError, TypeError) as exc:
-        raise AnalysisError('分析服务未返回完整的分类与教学报告，请重试；本地检测结果仍保留。') from None
     if not isinstance(result, dict) or set(result) != set(SECTIONS) | {'本次评分', '六维评分'}:
         raise AnalysisError('分析服务返回的栏目不完整，请重试。')
     score = result['本次评分']
@@ -145,15 +250,19 @@ def parse_analysis(value):
     return result
 
 
-def analyze(original, annotated, rows, observations, context, config, *, learning_goal=DEFAULT_LEARNING_GOAL, transport=None):
+def analyze(original, annotated, rows, observations, context, config, *, learning_goal=DEFAULT_LEARNING_GOAL,
+            transport=None, on_dimension=None):
     if not config.api_key.strip():
         raise AnalysisError('请先打开右上角“设置”，填写 API Key。')
     url = endpoint_url(config.endpoint)
-    payload = make_payload(original, annotated, rows, observations, context, config.model.strip(), learning_goal)
+    streaming = on_dimension is not None
+    payload = make_payload(original, annotated, rows, observations, context, config.model.strip(), learning_goal,
+                           stream=streaming)
     post = transport or requests.post
     try:
         response = post(url, headers={'Authorization': 'Bearer ' + config.api_key.strip(),
-            'Content-Type': 'application/json'}, json=payload, timeout=(10, 90), allow_redirects=False)
+            'Content-Type': 'application/json'}, json=payload, timeout=(10, 180), allow_redirects=False,
+            stream=streaming)
     except requests.Timeout:
         raise AnalysisError('分析请求超时，请稍后重试；不会自动重复请求。') from None
     except requests.RequestException:
@@ -169,13 +278,21 @@ def analyze(original, annotated, rows, observations, context, config, *, learnin
             }
             raise AnalysisError(messages.get(response.status_code, f'分析服务请求失败（HTTP {response.status_code}），请稍后重试。'))
         try:
-            body = response.json()
-            choice = body['choices'][0]
-            if choice.get('finish_reason') == 'length':
-                raise AnalysisError('分析结果被截断，未生成完整报告，请重试。')
-            sections = parse_analysis(choice['message']['content'])
+            if streaming:
+                body = {}
+                sections = parse_analysis(_stream_content(response, on_dimension))
+            else:
+                body = response.json()
+                choice = body['choices'][0]
+                if choice.get('finish_reason') == 'length':
+                    raise AnalysisError('分析结果被截断，未生成完整报告，请重试。')
+                sections = parse_analysis(choice['message']['content'])
         except (ValueError, KeyError, TypeError, IndexError):
             raise AnalysisError('分析服务返回格式异常，请重试。') from None
+        except requests.Timeout:
+            raise AnalysisError('分析响应超时，请稍后重试；不会自动重复请求。') from None
+        except requests.RequestException:
+            raise AnalysisError('分析服务连接中断，请检查网络后重试。') from None
         usage = body.get('usage', {})
         report = {'provider': '通义千问', 'model': config.model.strip(),
             'learning_goal': learning_goal.strip() or DEFAULT_LEARNING_GOAL,

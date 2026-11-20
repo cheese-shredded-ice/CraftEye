@@ -2,34 +2,38 @@ import io
 import json
 import hashlib
 
-import pandas as pd
 from PIL import Image, ImageOps
 import streamlit as st
 
-from common import ROOT, DATASET, MODEL, CLASS_NAMES, CHINESE_NAMES
+from common import ROOT, DATASET, MODEL
 from advice import OBSERVATIONS
-from inference import draw_boxes, infer
-from ai_ui import render_ai_settings, render_ai_analysis, submit_analysis
-from workspace_ui import install_layout, detection_summary, ai_placeholder, render_brand, section_heading
+from inference import draw_boxes, infer, read_annotation
+from ai_ui import render_ai_settings, render_ai_analysis, submit_analysis, detection_report
+from workspace_ui import (install_layout, detection_summary, render_brand,
+                          section_heading)
 from image_library_ui import render_image_picker
 from engineering_ui import render_engineering_entry
 
 st.set_page_config(page_title='数智评鉴系统', page_icon='🔎', layout='wide', initial_sidebar_state='collapsed')
 install_layout()
 with st.container(key='dashboard-header'):
-    title, engineering, settings = st.columns([7, 1.5, 1.5])
+    title, settings = st.columns([8.5, 1.5])
     with title:
         render_brand()
-    with engineering:
-        render_engineering_entry()
     with settings:
         with st.popover('设置', use_container_width=True):
             if MODEL.exists():
                 st.success('本地模型已就绪')
             else:
                 st.warning('模型尚未下载；请先运行安装环境.bat。')
-            confidence = st.slider('检测置信度阈值', 0.05, 0.95, 0.25, 0.05)
+            st.slider('检测置信度阈值', min_value=0.05, max_value=0.95,
+                      value=0.25, step=0.05, key='confidence_threshold',
+                      help='只显示达到该置信度的检测框；置信度不是评分。')
             render_ai_settings()
+            st.divider()
+            render_engineering_entry()
+
+confidence = float(st.session_state.get('confidence_threshold', 0.25))
 
 SHOW_REFERENCE_TABS = False
 ENABLE_BEHAVIOR = False
@@ -51,14 +55,20 @@ with detect_tab:
             source = render_image_picker()
         with observe, st.container(key='observe-image'), st.popover('现场现象', use_container_width=True):
             observations = st.multiselect('补充现场现象（可选，人工选择）', list(OBSERVATIONS), key='image_observations')
-        detect, export = st.columns(2)
-        with detect:
-            submitted = st.button('开始识别', type='primary', disabled=source is None or not MODEL.exists(), use_container_width=True)
-        detection = None
         image = None
+        read_error = None
         if source is not None:
             try:
-                image = ImageOps.exif_transpose(Image.open(source)).convert('RGB')
+                with Image.open(source) as opened:
+                    image = ImageOps.exif_transpose(opened).convert('RGB')
+            except (OSError, ValueError, Image.DecompressionBombError):
+                read_error = '图片读取或处理失败：文件已损坏或不是支持的图片，请重新选择。'
+        detect, export = st.columns(2)
+        with detect:
+            submitted = st.button('开始识别', type='primary', disabled=image is None or not MODEL.exists(), use_container_width=True)
+        detection = None
+        if image is not None:
+            try:
                 fingerprint = hashlib.sha256(image.tobytes() + str((image.size, confidence,
                     MODEL.stat().st_mtime_ns if MODEL.exists() else None)).encode()).hexdigest()
                 if submitted and st.session_state.get('_ai_job_image'):
@@ -78,22 +88,26 @@ with detect_tab:
                         st.download_button('保存检测图片', output.getvalue(), 'welding-result.png', 'image/png')
                         st.download_button('保存检测数据', json.dumps(detection['rows'], ensure_ascii=False, indent=2), 'welding-result.json', 'application/json')
                         report = {'detections': detection['rows'], 'confidence_threshold': confidence, 'manual_observations': observations}
-                        st.download_button('保存完整报告', json.dumps(report, ensure_ascii=False, indent=2), 'welding-report.json', 'application/json')
+                        report = detection_report('image', fingerprint, report)
+                        st.download_button('保存完整报告', json.dumps(report, ensure_ascii=False, indent=2), 'welding-report.json', 'application/json', on_click='ignore')
                 view = st.segmented_control('显示画面', ['检测结果', '原图'], default='检测结果', label_visibility='collapsed')
                 st.image(detection['image'] if detection and view != '原图' else image, width='stretch')
                 if detection:
                     detection_summary(detection['rows'])
-            except (OSError, ValueError) as exc:
+            except (OSError, ValueError, RuntimeError, Image.DecompressionBombError) as exc:
                 st.error(f'图片读取或处理失败：{exc}')
         else:
             with export:
                 st.button('下载结果', disabled=True, use_container_width=True)
-            st.html('<div class="ai-placeholder"><span>＋</span><h3>选择一张焊接图片</h3></div>')
+            if read_error:
+                st.error(read_error)
+            else:
+                st.html('<div class="ai-placeholder"><span>＋</span><h3>选择一张焊接图片</h3></div>')
     with feedback, st.container(key='image-ai'):
         if detection and image is not None:
             render_ai_analysis('image', fingerprint, image, detection['image'], detection['rows'], observations)
         else:
-            ai_placeholder()
+            render_ai_analysis('image')
 
 with camera_tab:
     from camera_ui import render_camera
@@ -114,19 +128,24 @@ with browse_tab:
         with index_column:
             index = st.number_input('图片序号', min_value=1, max_value=len(files), value=1)
         selected = files[index - 1]
-        original = Image.open(selected).convert('RGB')
-        boxes, rows = [], []
-        label = DATASET / split / 'labels' / (selected.stem + '.txt')
-        for line in label.read_text().splitlines():
-            cls, x, y, w, h = map(float, line.split())
-            coords = ((x-w/2)*original.width, (y-h/2)*original.height,
-                      (x+w/2)*original.width, (y+h/2)*original.height)
-            boxes.append((int(cls), coords, None))
-            rows.append({'类别': CHINESE_NAMES[int(cls)], '原始标签': CLASS_NAMES[int(cls)]})
-        with st.container(key='browse-image'):
-            st.image(draw_boxes(original, boxes), width='stretch')
-        if rows:
-            detection_summary(rows)
+        try:
+            with Image.open(selected) as opened:
+                original = opened.convert('RGB')
+        except (OSError, ValueError, Image.DecompressionBombError):
+            st.warning('这张数据集图片无法读取，请选择其他序号。')
+        else:
+            label = DATASET / split / 'labels' / (selected.stem + '.txt')
+            try:
+                boxes, rows = read_annotation(label, original.size)
+            except (OSError, ValueError):
+                boxes, rows = [], []
+                st.warning('这张图片的标注缺失或损坏，当前仅显示原图。')
+            with st.container(key='browse-image'):
+                st.image(draw_boxes(original, boxes), width='stretch')
+            if rows:
+                detection_summary(rows)
+    else:
+        st.info('当前分组没有可浏览的图片。')
 
 if ENABLE_BEHAVIOR:
     with tabs[4]:

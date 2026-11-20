@@ -8,7 +8,7 @@ from fractions import Fraction
 from pathlib import Path
 from PIL import Image
 from ai_analysis import AIConfig, analyze, make_payload, parse_analysis
-from analysis_audit import build_audit, audit_html
+from analysis_audit import analysis_status_html, analysis_status_lines, build_audit, audit_html
 from engineering_ui import engineering_html, evidence_payload
 from growth_chart import growth_data, growth_chart
 from scoring import DIMENSIONS, evaluate_quality, round_ratio
@@ -28,6 +28,21 @@ def record(values):
 
 
 class ExpertReviewTest(unittest.TestCase):
+    def test_analysis_status_bar_exists_for_empty_and_streaming_states(self):
+        first, second = analysis_status_lines(empty=True)
+        empty_html = analysis_status_html(empty=True)
+        self.assertIn(first, empty_html)
+        self.assertIn(second, empty_html)
+        self.assertIn('analysis-status-light is-idle', empty_html)
+        report = {'streaming': True, 'dimensions': {name: {'分数': None} for name, _ in DIMENSIONS}}
+        streaming_first, streaming_second = analysis_status_lines(report)
+        streaming_html = analysis_status_html(report)
+        self.assertIn(streaming_first, streaming_html)
+        self.assertIn(streaming_second, streaming_html)
+        self.assertIn('analysis-status-light is-analyzing', streaming_html)
+        complete_html = analysis_status_html(record([20, 20, 15, 20, 15, 10]))
+        self.assertIn('analysis-status-light is-complete', complete_html)
+
     def test_exact_trace_matches_score_and_no_early_rounding(self):
         for values in ([20,20,1,20,15,10],[20,20,15,20,15,0],[18,19,None,17,14,None],[None]*6):
             report=record(values); c=report['score']['计算明细']
@@ -97,7 +112,9 @@ class ExpertReviewTest(unittest.TestCase):
         self.assertEqual(len(growth_data(records*6)),42)
         large=[dict(records[0],sequence=i+1,run_id=str(i)) for i in range(5001)]
         spec=growth_chart(large).to_dict()
-        points_data=spec['layer'][2].get('data',spec.get('data',{}))
+        self.assertEqual([layer['mark']['type'] for layer in spec['layer']], ['line','point','point'])
+        self.assertNotIn('strokeDash',spec['layer'][0]['mark'])
+        points_data=spec['layer'][1].get('data',spec.get('data',{}))
         self.assertEqual(len(points_data['values']),5001)
 
     def test_provenance_no_fabricated_training_and_no_secrets(self):
@@ -112,7 +129,9 @@ class ExpertReviewTest(unittest.TestCase):
         for source in data['evidence_sources']:
             content=(root/'assets/engineering'/source['copied_file']).read_bytes()
             self.assertEqual(hashlib.sha256(content).hexdigest(),source['sha256'])
-            self.assertEqual(content,(root/source['source_file']).read_bytes())
+            # These are immutable historical snapshots. Running a new install
+            # check may replace the live source; its old snapshot stays intact.
+            self.assertEqual(source['type'], 'historical_local_verification')
 
 
 if __name__=='__main__':unittest.main()

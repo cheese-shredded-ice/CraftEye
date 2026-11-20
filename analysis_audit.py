@@ -51,6 +51,44 @@ def image_url(image):
     return 'data:image/jpeg;base64,' + base64.b64encode(output.getvalue()).decode('ascii')
 
 
+def analysis_status_lines(report=None, empty=False):
+    """Return two safe, user-facing status lines; never expose hidden reasoning."""
+    if empty or not report:
+        return ('分析状态：等待图片分析',
+                '分析路径：读取焊缝图像和重点区域后，逐项生成六维评价')
+    dimensions = report.get('dimensions') or {}
+    complete = sum(1 for name, _ in DIMENSIONS
+                   if dimensions.get(name, {}).get('分数') is not None)
+    if report.get('streaming'):
+        if complete == 0:
+            return ('分析状态：正在读取焊缝图像',
+                    '分析路径：先检查焊缝中部和两侧，再逐项完成六维评价')
+        if complete < len(DIMENSIONS):
+            return (f'分析状态：已完成 {complete}/{len(DIMENSIONS)} 个评价维度',
+                    '分析路径：继续核对剩余维度，完成后计算综合评分')
+        return ('分析状态：六个评价维度已返回',
+                '分析路径：正在汇总六维得分并生成教学结论')
+    score = report.get('score') or {}
+    final = score.get('分数')
+    final_text = '—' if final is None else f'{final}分'
+    grade = score.get('等级') or '待完成'
+    return ('分析状态：六维综合评价已完成',
+            f'分析路径：图像重点检查 → 六维评分 → 综合判定 · 当前结果 {final_text}（{grade}）')
+
+
+def analysis_status_html(report=None, empty=False, status='', message=''):
+    """Render the compact two-line status bar used by every analysis state."""
+    first, second = analysis_status_lines(report, empty=empty)
+    if message:
+        first, second = '分析状态：等待处理', message
+    light = 'is-analyzing' if report and report.get('streaming') else 'is-idle' if empty or not report else 'is-complete'
+    suffix = f'<small>{escape(status)}</small>' if status else ''
+    return (f'<div class="analysis-status-only" role="status" aria-live="polite">'
+            f'<span class="analysis-status-light {light}" aria-hidden="true"></span>'
+            f'<div class="analysis-status-copy"><b>{escape(first)}</b><em>{escape(second)}</em></div>'
+            f'{suffix}</div>')
+
+
 def audit_html(report, original=None, inputs=None):
     audit = report.get('audit') or {}
     calc = report.get('score', {}).get('计算明细') or {}
@@ -59,7 +97,10 @@ def audit_html(report, original=None, inputs=None):
     checked = bool(audit.get('checks')) and all(x['passed'] for x in audit['checks'])
     status = ('计算校验通过' if checked else '计算校验发现差异' if audit.get('checks')
               else '历史记录 · 部分依据未留存')
-    parts = [f'<details class="analysis-audit"><summary><span>运算与分析过程</span><small>{status}</small></summary><div class="audit-body">']
+    first, second = analysis_status_lines(report)
+    status_copy = (f'<span class="analysis-status-copy"><b>{escape(first)}</b>'
+                   f'<em>{escape(second)}</em></span>')
+    parts = [f'<details class="analysis-audit"><summary>{status_copy}<small>{status}</small></summary><div class="audit-body">']
     def step(title, subtitle, body):
         return f'<details class="audit-step"><summary><b>{title}</b><small>{escape(subtitle)}</small></summary><div class="audit-step-body">{body}</div></details>'
     size = audit.get('original_size', inputs.get('original_size', []))

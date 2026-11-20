@@ -20,7 +20,7 @@ APP_FILES = ['app.py','advice.py','ai_analysis.py','ai_ui.py','camera.py','camer
              'history_ui.py','image_library_ui.py','inference.py','recognition_history.py','score_ui.py',
              'scoring.py','teaching_report_ui.py','training_trends.py','workspace_ui.py','workspace.css']
 APP_FILES += ['behavior_core.py','behavior_inference.py','behavior_video.py','behavior_ui.py']
-APP_FILES += ['analysis_audit.py','engineering_ui.py','growth_chart.py']
+APP_FILES += ['analysis_audit.py','engineering_ui.py','growth_chart.py','demo_history.py']
 
 
 def dependencies(roots=None):

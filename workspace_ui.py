@@ -7,14 +7,14 @@ import streamlit as st
 import base64
 from dashboard_visuals import icon_html, icon_url
 
-
 def install_layout():
     root = Path(__file__).parent
     banner = base64.b64encode((root / 'assets/dashboard/welding-banner.webp').read_bytes()).decode()
     icons = ''.join(f'--icon-{name}:url({icon_url(name)});' for name in ('image', 'camera', 'record', 'analysis', 'play', 'download', 'person'))
     # Style-only st.html uses Streamlit's shared event container, where a fragment
     # can overwrite it. Anchor the stylesheet in the main tree instead.
-    st.html('<span data-workspace-style hidden></span><style>:root{--dashboard-banner:url(data:image/webp;base64,' + banner + ');' + icons + '}'
+    st.html('<span data-workspace-style hidden></span><style>:root{--dashboard-banner:url(data:image/webp;base64,' + banner + ');'
+            + icons + '}'
             + root.joinpath('workspace.css').read_text(encoding='utf-8') + '</style>')
 
 
@@ -38,9 +38,20 @@ def detection_summary(rows):
     st.html('<div class="detection-summary">' + (badges or '<span>未检出目标</span>') + '</div>')
 
 
-def ai_placeholder(message=''):
+def ai_placeholder(message='', view='六维评分', include_heading=True, status_message=''):
+    from analysis_audit import analysis_status_html
     from teaching_report_ui import dimensions_html
-    section_heading('综合分析')
+    from score_ui import score_html
+    from scoring import DIMENSIONS
+    if include_heading:
+        section_heading('综合分析')
     description = f'<p>{escape(message)}</p>' if message else ''
-    st.html(f'<div class="teaching-report dimension-placeholder"><div class="dimension-heading">六维评分</div>'
-            + dimensions_html() + description + '</div>')
+    empty_dimensions = {name: {'分数': None, '理由': '-'}
+                       for name, _ in DIMENSIONS}
+    empty_score = {'分数': 0, '等级': '-', '评分类型': '暂无分析'}
+    st.html('<div class="teaching-report">'
+            + score_html(empty_score)
+            + analysis_status_html(empty=True, message=status_message)
+            + '<div class="radar-card">'
+            + dimensions_html(empty_dimensions, '暂无分析数据')
+            + description + '</div></div>')

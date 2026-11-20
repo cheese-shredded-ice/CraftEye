@@ -127,7 +127,7 @@ def main():
    page.locator('.st-key-history_bulk_delete button').click()
    selection=page.locator('[data-testid="stMultiSelect"] input:visible').last
    for record in load_records(DB):
-    label=f'第{record["sequence"]}次'
+    label=f'第{record["display_sequence"]}次'
     selection.fill(label);page.get_by_role('option').filter(has_text=label+' ·').click()
    page.get_by_role('dialog').get_by_text('删除识别记录',exact=True).click()
    page.get_by_role('button',name='删除所选记录',exact=True).click()

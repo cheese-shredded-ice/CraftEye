@@ -15,9 +15,14 @@ from scoring import DIMENSIONS
 import ai_analysis
 import ai_ui
 import recognition_history
+import demo_history
 import streamlit as st
 
 recognition_history.HISTORY_DB = TEST_OUTPUT / 'history-test.sqlite3'
+# Browser suites seed their own isolated records. Exercise bundled records only
+# when explicitly requested, without inserting them into every deletion test.
+if os.environ.get('CRAFTEYE_TEST_BUNDLED') != '1':
+    demo_history.ensure_training_records = lambda path=None: 0
 
 
 class Reply:
@@ -26,6 +31,14 @@ class Reply:
 
     def json(self):
         return self.body
+
+    def iter_lines(self, decode_unicode=False):
+        content = self.body['choices'][0]['message']['content']
+        # Exercise the production SSE parser, including arbitrary JSON splits.
+        for start in range(0, len(content), 47):
+            event = 'data: ' + json.dumps({'choices': [{'delta': {'content': content[start:start + 47]}}]}, ensure_ascii=False)
+            yield event if decode_unicode else event.encode('utf-8')
+        yield 'data: [DONE]' if decode_unicode else b'data: [DONE]'
 
     def close(self):
         pass
@@ -41,7 +54,7 @@ def simulated_post(url, **kwargs):
               'model': kwargs['json']['model'], 'simulated': True}
     with (TEST_OUTPUT / 'requests.jsonl').open('a', encoding='utf-8') as output:
         output.write(json.dumps(record) + '\n')
-    time.sleep(0.8)
+    time.sleep(6 if kwargs['json']['model'] == 'simulate-slow' else 0.8)
     if kwargs['json']['model'] == 'simulate-401':
         return Reply({'error': 'test-key-not-real must not be displayed'}, status=401)
     sections = {'本次评分': {'理由': '模拟：焊道较连续，边缘过渡需练习。'},

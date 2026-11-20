@@ -22,7 +22,7 @@ with sync_playwright() as p:
     errors=[]
     page.on('pageerror',lambda e:errors.append(str(e)))
     labels={"example:"+x["id"]:"示例 · "+x["label"] for x in json.loads((ROOT/'assets/weld-examples/examples.json').read_text(encoding='utf-8'))}
-    history={"history:"+x["run_id"]:f'历史 #{x["sequence"]} ·' for x in load_picker_records(DB)}
+    history={"history:"+x["run_id"]:f'历史 #{x["display_sequence"]} ·' for x in load_picker_records(DB)}
     def tile(key):
         label=labels.get(key,history.get(key))
         return page.locator('.st-key-image-gallery button:visible').filter(has=page.locator('img[alt^='+json.dumps(label,ensure_ascii=False)+']'))

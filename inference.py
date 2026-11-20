@@ -1,10 +1,30 @@
 """Shared, serialized model inference for uploads and camera workers."""
 import threading
+import math
 
 from PIL import ImageDraw, ImageFont
 import streamlit as st
 
-from common import MODEL, CHINESE_NAMES, COLORS
+from common import MODEL, CLASS_NAMES, CHINESE_NAMES, COLORS
+
+
+def read_annotation(label, size):
+    """Parse normalized YOLO boxes; never draw corrupt labels as ground truth."""
+    boxes, rows = [], []
+    width, height = size
+    for line in label.read_text(encoding='utf-8-sig').splitlines():
+        if not line.strip():
+            continue
+        cls, x, y, w, h = map(float, line.split())
+        if (not cls.is_integer() or not 0 <= cls < len(CLASS_NAMES)
+                or not all(math.isfinite(v) and 0 <= v <= 1 for v in (x, y, w, h))
+                or min(w, h) == 0):
+            raise ValueError('标注类别或坐标无效')
+        cls = int(cls)
+        coords = ((x-w/2)*width, (y-h/2)*height, (x+w/2)*width, (y+h/2)*height)
+        boxes.append((cls, coords, None))
+        rows.append({'类别': CHINESE_NAMES[cls], '原始标签': CLASS_NAMES[cls]})
+    return boxes, rows
 
 
 def draw_boxes(image, boxes):
@@ -17,7 +37,7 @@ def draw_boxes(image, boxes):
         # the visual label to keep the overlay concise.
         # The result image is fit to the workbench column in the browser. Use a
         # large source label so the class name remains readable after that fit.
-        font = ImageFont.truetype('C:/Windows/Fonts/msyh.ttc', max(40, image.width // 16))
+        font = ImageFont.truetype('C:/Windows/Fonts/msyh.ttc', max(30, image.width // 16))
     except OSError:
         font = ImageFont.load_default()
     padding = max(3, image.width // 320)

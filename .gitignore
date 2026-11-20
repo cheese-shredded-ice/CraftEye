@@ -12,6 +12,7 @@ logs/
 data.local.yaml
 .env
 .streamlit/secrets.toml
+.streamlit/layout_settings.json
 outputs/
 安卓安装包/
 Ultralytics/

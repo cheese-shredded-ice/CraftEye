@@ -10,7 +10,7 @@ from defect_references import REFERENCES, REFERENCE_DIR, matched_references
 from score_ui import score_html
 from scoring import DIMENSIONS, SCORE_FORMULA, score_band
 from dashboard_visuals import icon_html
-from analysis_audit import audit_html
+from analysis_audit import analysis_status_html
 
 
 def dimensions_html(dimensions=None, formula=None):
@@ -44,7 +44,7 @@ def dimensions_html(dimensions=None, formula=None):
     for index, ((name, weight), (x, y, anchor)) in enumerate(zip(DIMENSIONS, labels)):
         item = (dimensions or {}).get(name)
         value = values[index]
-        number = '—' if item and value is None else ('待识别' if value is None else f'{value}分')
+        number = ('待识别' if item is None or item.get('理由') == '等待识别' else '—') if value is None else f'{value}分'
         if item and value is not None and '得分' in item:
             number = f'{item["得分"]}/{item["满分"]}分'
         color, _ = score_band(value)
@@ -94,9 +94,13 @@ def report_html(report, original, view='改进建议', inputs=None):
     length = sum(len(item) for items in sections.values() for item in items)
     density = ' dense' if length > 150 or len(sections.get('缺陷类型', [])) > 2 else ''
     parts = [f'<div class="teaching-report{density}">', score_html(report['score'])]
-    parts.append(audit_html(report, original, inputs))
+    # Keep one stable status-bar layout for empty, streaming, and completed
+    # reports. Detailed audit data remains available to reports/history, but it
+    # should not replace the visible teaching analysis panel after completion.
+    parts.append(analysis_status_html(report))
     if view == '六维评分':
-        formula = (SCORE_FORMULA if report['score']['分数'] is not None
+        formula = ('六维结果返回后计算最终综合分' if report.get('streaming') else
+                   SCORE_FORMULA if report['score']['分数'] is not None
                    else '可评项目不足，暂不计算总分')
         if report['score'].get('评分类型') == '可见项参考分':
             formula = f'可见项参考分 · {report["score"]["可评维度数"]}/6项 · 覆盖{report["score"]["可评权重"]}%'

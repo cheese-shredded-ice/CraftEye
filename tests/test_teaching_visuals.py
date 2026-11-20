@@ -45,6 +45,24 @@ class TeachingVisualsTest(unittest.TestCase):
         self.assertNotIn('<img src=x', html)
         self.assertNotIn('score-outcome', html)
         self.assertNotIn('教学目标：', html)
+        self.assertNotIn('score-breakdown', html)
+        self.assertNotIn('基础分', html)
+        self.assertNotIn('短板惩罚', html)
+
+    def test_score_card_keeps_compact_gauge_and_progress_scale(self):
+        html = score_html({'分数': 91, '基础分': 94, '短板惩罚': 3,
+                           '是否达到教学目标': '已达到', '等级': '符合'})
+        self.assertIn('class="score-gauge"', html)
+        self.assertIn('class="score-scale', html)
+        self.assertNotIn('94', html)
+        self.assertNotIn('教学目标', html)
+
+    def test_empty_analysis_uses_zero_score_and_dash_evaluation(self):
+        html = score_html({'分数': 0, '等级': '-', '评分类型': '暂无分析'})
+        self.assertIn('data-weld-score="0"', html)
+        self.assertIn('>0</strong>', html)
+        self.assertIn('>-</span>', html)
+        self.assertNotIn('严重不符合</span>', html)
 
     def test_critical_decision_does_not_replace_numeric_progress_tier(self):
         score = {'分数': 59, '等级': '不符合', '关键缺陷': [{'类型': '裂纹'}],

@@ -4,16 +4,18 @@ import copy
 import json
 import os
 from pathlib import Path
+from queue import Empty, Queue
 import tomllib
 import uuid
 
 import streamlit as st
 
 from ai_analysis import (AIConfig, AnalysisError, DEFAULT_ENDPOINT, DEFAULT_MODEL,
-                         DEFAULT_LEARNING_GOAL, analysis_identity, analyze, report_text)
+                         DEFAULT_LEARNING_GOAL, analysis_identity, analyze)
 from teaching_report_ui import report_html
 from recognition_history import save_record
 from workspace_ui import section_heading
+from scoring import DIMENSIONS, evaluate_quality
 
 
 def local_api_key():
@@ -78,81 +80,138 @@ def submit_analysis(namespace, source_id, original, annotated, rows, observation
     inputs = {'source_id': source_id, 'source_type': namespace, 'detections': copy.deepcopy(rows),
               'manual_observations': list(observations), 'process_context': context,
               'learning_goal': learning_goal, 'original_size': [original.width, original.height]}
+    progress = Queue()
     future = get_executor().submit(analyze_and_record, uuid.uuid4().hex, namespace, original.copy(), annotated.copy(),
                                     copy.deepcopy(rows), list(observations), context, config,
-                                    learning_goal=learning_goal, history_inputs=copy.deepcopy(inputs))
-    st.session_state[job_key] = {'identity': identity, 'future': future, 'inputs': inputs}
+                                    learning_goal=learning_goal, history_inputs=copy.deepcopy(inputs),
+                                    on_dimension=lambda name, item: progress.put((name, item)))
+    st.session_state[job_key] = {'identity': identity, 'future': future, 'inputs': inputs,
+                                 'export_signature': export_signature(source_id, observations, config),
+                                 'progress': progress, 'dimensions': {}}
     st.session_state.pop(f'_ai_error_{namespace}', None)
     st.session_state.pop(f'_ai_result_{namespace}', None)
     return True
 
 
-def render_ai_analysis(namespace, source_id, original, annotated, rows, observations):
+def export_signature(source_id, observations, config):
+    return (source_id, tuple(observations), config.model.strip(), config.endpoint.strip().rstrip('/'))
+
+
+def detection_report(namespace, source_id, local_report):
+    """Include the final analysis only for the exact current detection/configuration."""
+    completed = st.session_state.get(f'_ai_result_{namespace}')
+    signature = export_signature(source_id, local_report['manual_observations'], current_config())
+    if completed and completed.get('export_signature') == signature:
+        return {**local_report, 'analysis': completed['report']}
+    return local_report
+
+
+def render_ai_analysis(namespace, source_id='', original=None, annotated=None, rows=None,
+                       observations=None, empty_message=''):
+    """Render one stable analysis surface for empty, pending, and finished states.
+
+    Keeping the fragment mounted even before an image is available prevents
+    Streamlit from leaving the previous placeholder DOM behind when recognition
+    starts. That stale DOM was the source of the duplicate score card below the
+    live analysis panel.
+    """
     # Only pending work needs a timer. Finished reports remain mounted until input changes.
     interval = 1.0 if st.session_state.get(f'_ai_job_{namespace}') else None
     st.fragment(run_every=interval)(_render_ai_analysis)(
-        namespace, source_id, original, annotated, rows, observations)
+        namespace, source_id, original, annotated, rows or [], observations or [], empty_message)
 
 
-def _render_ai_analysis(namespace, source_id, original, annotated, rows, observations):
-    learning_goal = DEFAULT_LEARNING_GOAL
-    context = ''
+def _render_ai_analysis(namespace, source_id, original, annotated, rows, observations, empty_message=''):
     config = current_config()
-    identity = analysis_identity(original, annotated, rows, observations, context, config, learning_goal)
     job_key, result_key, error_key = (f'_ai_{name}_{namespace}' for name in ('job', 'result', 'error'))
     job = st.session_state.get(job_key)
+    view_key = f'ai_view_{namespace}'
+    view = st.session_state.get(view_key, '六维评分')
+
+    # Consume the old task even after its image was removed or replaced. Without
+    # this, the empty view stops polling and blocks every later submission.
+    if job:
+        while True:
+            try:
+                name, item = job['progress'].get_nowait()
+            except Empty:
+                break
+            job['dimensions'][name] = item
     if job and job['future'].done():
         try:
             report = job['future'].result()
             st.session_state[result_key] = {'identity': job['identity'], 'report': report,
-                'inputs': job['inputs']}
+                'inputs': job['inputs'], 'export_signature': job.get('export_signature')}
             st.session_state.pop(error_key, None)
         except AnalysisError as exc:
             st.session_state[error_key] = {'identity': job['identity'], 'message': str(exc)}
         except Exception:
-            # Do not expose exception bodies or provider errors containing credentials.
             st.session_state[error_key] = {'identity': job['identity'], 'message': '分析未完成，请稍后重试。'}
         del st.session_state[job_key]
-        # Re-register the fragment without a timer, including after failed requests.
         st.rerun()
+
+    # Keep the heading, action, and view controls mounted in the same order
+    # before recognition, while analysis is running, and after it completes.
     title, submit = st.columns([1.7, 1])
     with title:
         section_heading('综合分析')
     with submit:
         clicked = st.button('综合分析当前图片', key=f'ai_submit_{namespace}', type='primary',
-                            disabled=bool(job) or not config.api_key, use_container_width=True)
+                            disabled=original is None or bool(job) or not config.api_key,
+                            use_container_width=True)
+    if original is None:
+        # The empty view keeps the same controls and report slot as a real result.
+        from workspace_ui import ai_placeholder
+        ai_placeholder(empty_message, view=view, include_heading=False)
+        st.segmented_control('评价视图', ['六维评分', '改进建议'], default=view,
+                             label_visibility='collapsed', key=view_key, width='stretch')
+        return
+
+    learning_goal = DEFAULT_LEARNING_GOAL
+    context = ''
+    identity = analysis_identity(original, annotated, rows, observations, context, config, learning_goal)
     if clicked:
         submit_analysis(namespace, source_id, original, annotated, rows, observations)
         # Re-register with a timer and disable submission while the job is pending.
         st.rerun()
-    if job:
-        if job['identity'] == identity:
-            st.info('正在分析当前图片，请稍候…')
-        else:
-            st.info('上一份输入的分析仍在进行。完成后可分析当前图片；旧结果不会应用到新输入。')
-    if not config.api_key:
-        st.info('请打开右上角“分析设置”填写 API Key，再点击分析按钮。')
     error = st.session_state.get(error_key)
-    if error and error['identity'] == identity:
-        st.error(error['message'])
     completed = st.session_state.get(result_key)
-    if completed and completed['identity'] == identity:
+    if job and job['identity'] == identity:
+        partial = partial_report(job['dimensions'], learning_goal)
+        st.html(report_html(partial, original, view, job['inputs']))
+    elif completed and completed['identity'] == identity:
         report = completed['report']
         if report.get('history_save_error'):
-            st.warning('本次结果已生成，但识别记录保存失败，请先下载报告。')
-        view_key = f'ai_view_{namespace}'
-        view = st.session_state.get(view_key, '六维评分')
+            st.warning('本次结果已生成，但识别记录保存失败。')
         st.html(report_html(report, original, view, completed['inputs']))
-        controls, downloads = st.columns([1.35, 1])
-        with controls:
-            st.radio('评价视图', ['六维评分', '改进建议'], horizontal=True,
-                     label_visibility='collapsed', key=view_key)
-        download_id = identity + report['generated_at']
-        with downloads, st.popover('下载分析报告'):
-            st.download_button('保存分析结果（TXT）', report_text(report), 'welding-analysis.txt', 'text/plain',
-                               key=f'ai_txt_{namespace}_{download_id}', on_click='ignore')
-            st.download_button('保存完整分析报告（JSON）',
-                               json.dumps({'analysis': report, 'inputs': completed['inputs']}, ensure_ascii=False, indent=2),
-                               'welding-analysis-report.json', 'application/json', key=f'ai_json_{namespace}_{download_id}', on_click='ignore')
-    elif completed and not job:
-        st.info('图片、现场现象或模型配置已变化，请点击按钮重新分析当前输入。')
+    else:
+        from workspace_ui import ai_placeholder
+        notice = ''
+        if job:
+            notice = '上一份输入的分析仍在进行，完成后可分析当前图片。'
+        elif error and error['identity'] == identity:
+            notice = error['message']
+        elif not config.api_key:
+            notice = '请打开右上角“设置”填写 API Key，再点击分析按钮。'
+        elif completed:
+            notice = '图片、现场现象或模型配置已变化，请点击按钮重新分析当前输入。'
+        ai_placeholder(view=view, include_heading=False, status_message=notice)
+
+    # Keep the view switcher at the bottom of the panel in every state.  It is
+    # deliberately mounted after the report so recognition never moves it.
+    st.segmented_control('评价视图', ['六维评分', '改进建议'], default=view,
+                         label_visibility='collapsed', key=view_key, width='stretch')
+
+
+def partial_report(received, learning_goal):
+    """Build a display-only snapshot; accumulate raw points until the final grade."""
+    raw = {name: received.get(name, {'分数': None, '理由': '等待识别'}) for name, _ in DIMENSIONS}
+    normalized, score = evaluate_quality(raw)
+    stage_score = sum(item['分数'] or 0 for item in raw.values())
+    score.update({'分数': stage_score, '最终分': None, '等级': '分析中',
+                  '是否达到教学目标': '分析中', '达标': False,
+                  '评分类型': '分析进度参考', '关键缺陷': [], '计算明细': None,
+                  '基础分': None, '短板惩罚': None, '最低项分': None})
+    return {'score': score, 'dimensions': normalized, 'dimension_weights': dict(DIMENSIONS),
+            'sections': {key: ['分析完成后显示'] for key in ('缺陷类型', '图中现象', '可能原因', '改良建议')},
+            'learning_goal': learning_goal, 'streaming': True, 'focus_regions': []}
