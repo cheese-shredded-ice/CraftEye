@@ -91,6 +91,7 @@ docs/screenshots/       README 功能截图
 ```
 
 系统检查记录见 [SYSTEM_CHECK.md](SYSTEM_CHECK.md)，展示说明见 [SHOWCASE.md](SHOWCASE.md)。
+Python 文件按网页运行、模型推理、评分记录和开发验证归类，详见 [docs/PYTHON_FILES.md](docs/PYTHON_FILES.md)。
 
 ## 注意事项
 

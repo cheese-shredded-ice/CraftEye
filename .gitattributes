@@ -1,0 +1,2 @@
+models/welding.pt filter=lfs diff=lfs merge=lfs -text
+models/welding.onnx filter=lfs diff=lfs merge=lfs -text

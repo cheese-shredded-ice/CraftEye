@@ -36,10 +36,7 @@ with st.container(key='dashboard-header'):
 confidence = float(st.session_state.get('confidence_threshold', 0.25))
 
 SHOW_REFERENCE_TABS = False
-ENABLE_BEHAVIOR = False
 tab_names = ['图片识别', '摄像头实时识别', '识别记录', '浏览数据与标注']
-if ENABLE_BEHAVIOR:
-    tab_names.append('实训行为')
 if SHOW_REFERENCE_TABS:
     tab_names += ['模型与说明']
 tabs = st.tabs(tab_names)
@@ -146,11 +143,6 @@ with browse_tab:
                 detection_summary(rows)
     else:
         st.info('当前分组没有可浏览的图片。')
-
-if ENABLE_BEHAVIOR:
-    with tabs[4]:
-        from behavior_ui import render_behavior
-        render_behavior()
 
 if SHOW_REFERENCE_TABS:
     info_tab = tabs[-1]

@@ -266,33 +266,6 @@ h1,h3 { padding:0 !important;margin:0 !important; }
 @media (max-height:800px) { .st-key-history-table,.st-key-history-growth { height:var(--panel-height); }.history-table { font-size:21px; } }
 
 /* Observable training behaviour: independent single-screen workspace. */
-.st-key-behavior_upload [data-testid="stFileUploaderDropzoneInstructions"] > div > span:last-child {font-size:0;}
-.st-key-behavior_upload [data-testid="stFileUploaderDropzoneInstructions"] > div > span:last-child::after {content:"支持 MP4、MOV、AVI、WebM、MKV";font-size:14px;}
-.st-key-behavior-preview,.st-key-behavior-feedback {height:calc(100dvh - 300px) !important;max-height:calc(100dvh - 300px);min-height:0;overflow:auto !important;padding:14px;border-radius:22px;border:1px solid white;background:linear-gradient(135deg,#f6fcfff5,#e3f2ff);}
-.st-key-behavior-preview [data-testid="stImage"] img {height:calc(100dvh - 440px);width:100%;object-fit:contain;border-radius:12px;}
-.st-key-behavior-preview video {width:100%;max-height:calc(100dvh - 465px);background:#0d2535;border-radius:12px;}
-.behavior-report {font-size:17px;}
-.behavior-state {font-size:22px;font-weight:750;color:#007c86;display:flex;justify-content:space-between;}
-.behavior-state span {font-size:16px;font-weight:500;}
-.behavior-metrics {display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0;}
-.behavior-metrics>div {border:1px solid #bde0e6;border-radius:12px;padding:7px 10px;background:#f8ffff;}
-.behavior-metrics span,.behavior-metrics strong {display:block;}
-.behavior-metrics span {font-size:15px;color:#54718b;}
-.behavior-metrics strong {font-size:25px;color:#075e6b;}
-.behavior-gear {display:grid;grid-template-columns:repeat(4,1fr);gap:6px;}
-.behavior-gear>div {padding:7px 4px;border-radius:9px;background:#edf2f7;text-align:center;border:1px solid #ccdce4;}
-.behavior-gear b,.behavior-gear span {display:block;font-size:15px;}
-.behavior-gear .gear-observed {background:#d6f6ee;color:#087d68;}
-.behavior-gear .gear-missing {background:#ffe1dd;color:#ab3726;}
-.behavior-gear .gear-uncertain {background:#fff0d0;color:#915c0b;}
-.behavior-note {font-size:13px;color:#54718b;margin-top:6px;}
-.behavior-report h4 {font-size:18px;margin:10px 0 4px;}
-.behavior-events {max-height:105px;overflow:auto;}
-.behavior-events table {width:100%;border-collapse:collapse;font-size:15px;}
-.behavior-events td {padding:5px;border-bottom:1px solid #c8e1ec;}
-.behavior-events p,.behavior-tips p {font-size:15px!important;margin:5px 0;}
-.behavior-tips {border-top:1px solid #c8e1ec;margin-top:8px;}
-.behavior-empty {padding:25px 12px;line-height:1.7;color:#54718b;}
 @media (max-width:1400px) { [data-baseweb="tab-list"] {gap:8px;} [data-baseweb="tab"] {padding-left:14px;padding-right:14px;} }
 
 /* v3.0 small-screen fix: constrain reports, preserve full text and footer controls. */
