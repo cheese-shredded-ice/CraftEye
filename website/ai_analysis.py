@@ -11,10 +11,11 @@ from urllib.parse import urlsplit, urlunsplit
 
 from PIL import Image, ImageOps
 import requests
-from scoring import (DIMENSIONS, RUBRIC_VERSION, evaluate_quality, SCORE_FORMULA,
+from .common import ROOT
+from .scoring import (DIMENSIONS, RUBRIC_VERSION, evaluate_quality, SCORE_FORMULA,
                      PASS_SCORE, PASS_MINIMUM, EXCELLENT_SCORE, EXCELLENT_MINIMUM)
-from focus_regions import FOCUS_CONFIDENCE, MAX_FOCUS_CROPS, focus_regions
-from analysis_audit import build_audit
+from .focus_regions import FOCUS_CONFIDENCE, MAX_FOCUS_CROPS, focus_regions
+from .analysis_audit import build_audit
 
 DEFAULT_ENDPOINT = 'https://dashscope.aliyuncs.com/compatible-mode/v1'
 DEFAULT_MODEL = 'qwen3-vl-plus'
@@ -89,7 +90,7 @@ def make_payload(original, annotated, rows, observations, context, model, learni
     if not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9._:-]{0,127}', model):
         raise AnalysisError('请填写有效的视觉模型名称。')
     regions = focus_regions(rows, original.size)
-    prompt = Path(__file__).with_name('prompts').joinpath('welding_v4.md').read_text(encoding='utf-8')
+    prompt = (Path(__file__).resolve().parent / 'prompts' / 'welding_v4.md').read_text(encoding='utf-8')
     data = {'detections': rows, 'manual_observations': list(observations),
             'detection_confidence_usage': '仅辅助定位与选择裁图，不是质量分、合格概率或扣分依据',
             'user_supplied_process_context': context, 'learning_goal': learning_goal,

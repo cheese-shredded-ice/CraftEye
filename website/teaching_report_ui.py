@@ -5,12 +5,12 @@ from html import escape
 import io
 import math
 
-from ai_analysis import SECTIONS
-from defect_references import REFERENCES, REFERENCE_DIR, matched_references
-from score_ui import score_html
-from scoring import DIMENSIONS, SCORE_FORMULA, score_band
-from dashboard_visuals import icon_html
-from analysis_audit import analysis_status_html
+from .ai_analysis import SECTIONS
+from .defect_references import REFERENCES, REFERENCE_DIR, matched_references
+from .score_ui import score_html
+from .scoring import DIMENSIONS, SCORE_FORMULA, score_band
+from .dashboard_visuals import icon_html
+from .analysis_audit import analysis_status_html
 
 
 def dimensions_html(dimensions=None, formula=None):

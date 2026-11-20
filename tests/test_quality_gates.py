@@ -6,10 +6,10 @@ import tempfile
 import unittest
 from contextlib import closing
 
-from ai_analysis import parse_analysis, AnalysisError, report_text
-from recognition_history import save_record, load_records, delete_records
-from scoring import (DIMENSIONS, RUBRIC_VERSION, evaluate_quality, decision_style, round_ratio)
-from score_ui import score_html
+from website.ai_analysis import parse_analysis, AnalysisError, report_text
+from website.recognition_history import save_record, load_records, delete_records
+from website.scoring import (DIMENSIONS, RUBRIC_VERSION, evaluate_quality, decision_style, round_ratio)
+from website.score_ui import score_html
 
 
 def dimensions(values=None):
@@ -170,7 +170,7 @@ class QualityGatesTest(unittest.TestCase):
         self.assertEqual(score['可评维度数'], 4)
 
     def test_detection_confidence_never_changes_identical_dimension_scores(self):
-        from ai_analysis import AIConfig, analyze
+        from website.ai_analysis import AIConfig, analyze
         from PIL import Image
         payload = {'本次评分': {'理由': '可见外观较稳定'}, '六维评分': dimensions([18,19,14,17,14,9]),
                    '缺陷类型': ['未见明显外观缺陷'], '图中现象': ['鱼鳞纹排列整齐'],
@@ -218,7 +218,7 @@ class QualityGatesTest(unittest.TestCase):
             self.assertNotIn('待复核', text)
             self.assertNotIn('待检测', text)
             self.assertIn('疑似裂纹', text)
-            from history_ui import export_csv
+            from website.history_ui import export_csv
             self.assertIn('符合', export_csv(records).decode('utf-8-sig'))
             delete_records(['new'], path)
             with closing(sqlite3.connect(path)) as db:

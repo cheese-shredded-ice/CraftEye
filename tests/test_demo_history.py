@@ -7,10 +7,10 @@ import tempfile
 from PIL import Image
 import unittest
 
-from demo_history import demo_records, demo_photo, ensure_training_records
-from growth_chart import growth_chart
-from history_ui import export_csv
-from recognition_history import (load_records, load_record_detail, load_original_images,
+from website.demo_history import demo_records, demo_photo, ensure_training_records
+from website.growth_chart import growth_chart
+from website.history_ui import export_csv
+from website.recognition_history import (load_records, load_record_detail, load_original_images,
                                  load_picker_records, save_record, delete_records)
 
 

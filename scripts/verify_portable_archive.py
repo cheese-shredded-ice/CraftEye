@@ -107,10 +107,10 @@ try:
         browser.close()
     # Check a direct bundled-model inference after relocation as well.
     result=subprocess.run([str(python),'-I','-B','-X','utf8','-c',
-        'from pathlib import Path; from PIL import Image; from inference import infer; from common import DATASET; '
+        'from pathlib import Path; from PIL import Image; from website.inference import infer; from website.common import DATASET; '
         'image,rows=infer(Image.open(next((DATASET/"test/images").glob("*.jpg"))).convert("RGB"),.25); '
         'assert rows; image.save("logs/verified-detection.png"); '
-        'from recognition_history import load_records; assert len(load_records())==60; '
+        'from website.recognition_history import load_records; assert len(load_records())==60; '
         'print("RELOCATED_INFERENCE_OK")'],cwd=package,env=env,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True,encoding='utf-8',timeout=120)
     assert result.returncode==0,result.stdout
     assert 'RELOCATED_INFERENCE_OK' in result.stdout

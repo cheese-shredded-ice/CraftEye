@@ -6,11 +6,11 @@ import requests
 
 from PIL import Image
 
-from ai_analysis import AIConfig, AnalysisError, analyze, _stream_content, endpoint_url
-from ai_ui import partial_report
-from scoring import DIMENSIONS
-from analysis_audit import analysis_status_lines
-from teaching_report_ui import dimensions_html, report_html
+from website.ai_analysis import AIConfig, AnalysisError, analyze, _stream_content, endpoint_url
+from website.ai_ui import partial_report
+from website.scoring import DIMENSIONS
+from website.analysis_audit import analysis_status_lines
+from website.teaching_report_ui import dimensions_html, report_html
 
 
 class StreamReply:

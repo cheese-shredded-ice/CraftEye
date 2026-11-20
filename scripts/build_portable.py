@@ -16,11 +16,15 @@ from packaging.utils import canonicalize_name
 ROOT = Path(__file__).resolve().parents[1]
 ROOT_PACKAGES = ['torch','torchvision','ultralytics','streamlit','streamlit-webrtc','requests']
 LITE_PACKAGES = ['onnxruntime','opencv-python','streamlit','streamlit-webrtc','requests']
-APP_FILES = ['app.py','advice.py','ai_analysis.py','ai_ui.py','camera.py','camera_ui.py',
-             'common.py','dashboard_visuals.py','defect_references.py','focus_regions.py',
-             'history_ui.py','image_library_ui.py','inference.py','recognition_history.py','score_ui.py',
-             'scoring.py','teaching_report_ui.py','training_trends.py','workspace_ui.py','workspace.css']
-APP_FILES += ['analysis_audit.py','engineering_ui.py','growth_chart.py','demo_history.py']
+APP_FILES = ['app.py']
+WEBSITE_FILES = ['website/__init__.py','website/advice.py','website/ai_analysis.py','website/ai_ui.py',
+                 'website/analysis_audit.py','website/camera.py','website/camera_ui.py','website/common.py',
+                 'website/dashboard_visuals.py','website/defect_references.py','website/demo_history.py',
+                 'website/engineering_ui.py','website/focus_regions.py','website/growth_chart.py',
+                 'website/history_ui.py','website/image_library_ui.py','website/inference.py',
+                 'website/onnx_backend.py','website/recognition_history.py','website/score_ui.py',
+                 'website/scoring.py','website/teaching_report_ui.py','website/training_trends.py',
+                 'website/workspace_ui.py','website/workspace.css','website/prompts/welding_v4.md']
 
 
 def dependencies(roots=None):
@@ -87,9 +91,13 @@ def build(destination, lite=False, version='4.1'):
         print(f'{name}=={package.version}: {count} files',flush=True)
     for name in APP_FILES:
         copy_file(ROOT/name,destination/name)
+    for name in WEBSITE_FILES:
+        copy_file(ROOT/name,destination/name)
     if lite:
-        copy_file(ROOT/'onnx_backend.py',destination/'onnx_backend.py')
-    for folder in ['assets','prompts']:
+        # ONNX backend is already included in WEBSITE_FILES; this branch is
+        # retained to document that lite packages use the CPU backend.
+        pass
+    for folder in ['assets']:
         shutil.copytree(ROOT/folder,destination/folder)
     model_name = 'welding.onnx' if lite else 'welding.pt'
     for name in [model_name,'source.json','author-README.md']:

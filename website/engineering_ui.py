@@ -4,16 +4,16 @@ import json
 from html import escape
 from pathlib import Path
 import streamlit as st
-from analysis_audit import table
-from scoring import BASE_PERCENT, MINIMUM_PERCENT, CRITICAL_SCORE_CAP, PASS_SCORE, PASS_MINIMUM
+from .common import ROOT
+from .analysis_audit import table
+from .scoring import BASE_PERCENT, MINIMUM_PERCENT, CRITICAL_SCORE_CAP, PASS_SCORE, PASS_MINIMUM
 
 
-ROOT = Path(__file__).resolve().parent
 IMPLEMENTATIONS = {
-    '重点区域选取': 'focus_regions.py', '统一评分与教学门槛': 'scoring.py',
-    '教学任务约束': 'prompts/welding_v4.md', '请求与结构校验': 'ai_analysis.py',
-    '运算过程留痕': 'analysis_audit.py', '记录持久化': 'recognition_history.py',
-    '真实成长轨迹': 'growth_chart.py', '本地推理适配': 'onnx_backend.py',
+    '重点区域选取': 'website/focus_regions.py', '统一评分与教学门槛': 'website/scoring.py',
+    '教学任务约束': 'website/prompts/welding_v4.md', '请求与结构校验': 'website/ai_analysis.py',
+    '运算过程留痕': 'website/analysis_audit.py', '记录持久化': 'website/recognition_history.py',
+    '真实成长轨迹': 'website/growth_chart.py', '本地推理适配': 'website/onnx_backend.py',
 }
 
 
@@ -40,12 +40,12 @@ def engineering_html(data):
         ('规则计算','短板约束 · 缺陷限分'), ('教学闭环','建议 · 留档 · 成长对比')],1)) + '</div>'
     body += '<h3>项目定制的核心实现</h3>'
     body += table(['模块','设计逻辑','可核验代码'],[
-        ['区域证据选择','缺陷优先；保留框内小缺陷；扩边裁图；检测置信度只用于定位。','focus_regions.py'],
-        ['六维短板约束',f'{BASE_PERCENT}%基础分 + {MINIMUM_PERCENT}%最低项；精确分数计算与输出取整。','scoring.py'],
-        ['质量门槛与教学目标',f'符合需最终分≥{PASS_SCORE}且各项≥{PASS_MINIMUM}；图像关键缺陷触发最高{CRITICAL_SCORE_CAP}分。','scoring.py'],
-        ['教学语境与输出校验','面向中职学生；优先检查中部及两侧线状开裂；区分鱼鳞纹；限定六维与简短建议。','prompts/welding_v4.md / ai_analysis.py'],
-        ['过程留痕与版本追溯','原图、检测图、裁图指纹、计算快照、评分规则随记录保存。','analysis_audit.py / recognition_history.py'],
-        ['本地化交付','Windows CPU 推理、ONNX 适配、摄像头截取、单屏响应式布局。','onnx_backend.py / camera_ui.py / workspace.css'],
+        ['区域证据选择','缺陷优先；保留框内小缺陷；扩边裁图；检测置信度只用于定位。','website/focus_regions.py'],
+        ['六维短板约束',f'{BASE_PERCENT}%基础分 + {MINIMUM_PERCENT}%最低项；精确分数计算与输出取整。','website/scoring.py'],
+        ['质量门槛与教学目标',f'符合需最终分≥{PASS_SCORE}且各项≥{PASS_MINIMUM}；图像关键缺陷触发最高{CRITICAL_SCORE_CAP}分。','website/scoring.py'],
+        ['教学语境与输出校验','面向中职学生；优先检查中部及两侧线状开裂；区分鱼鳞纹；限定六维与简短建议。','website/prompts/welding_v4.md / website/ai_analysis.py'],
+        ['过程留痕与版本追溯','原图、检测图、裁图指纹、计算快照、评分规则随记录保存。','website/analysis_audit.py / website/recognition_history.py'],
+        ['本地化交付','Windows CPU 推理、ONNX 适配、摄像头截取、单屏响应式布局。','website/onnx_backend.py / website/camera_ui.py / website/workspace.css'],
     ])
     body += '<details class="audit-step"><summary><b>验证与训练来源</b><small>展开查看原始记录与指标范围</small></summary><div class="audit-step-body">'
     if metrics:

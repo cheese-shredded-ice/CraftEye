@@ -5,8 +5,8 @@ import io
 import json
 from html import escape
 from PIL import Image
-from scoring import DIMENSIONS, RUBRIC_VERSION, evaluate_quality
-from focus_regions import focus_regions, MAX_FOCUS_CROPS
+from .scoring import DIMENSIONS, RUBRIC_VERSION, evaluate_quality
+from .focus_regions import focus_regions, MAX_FOCUS_CROPS
 
 
 def build_audit(report, payload, original_size, rows):

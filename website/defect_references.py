@@ -2,7 +2,9 @@
 from pathlib import Path
 import re
 
-REFERENCE_DIR = Path(__file__).resolve().parent / 'assets' / 'defect-references'
+from .common import ROOT
+
+REFERENCE_DIR = ROOT / 'assets' / 'defect-references'
 REFERENCES = {
     '气孔': ('porosity.jpg', '看表面：有圆形或不规则的小孔。'),
     '夹渣': ('slag.jpg', '看断面：金属内部夹有非金属残留。此示例是断面图。'),

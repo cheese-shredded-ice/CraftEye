@@ -1,6 +1,6 @@
 import unittest
 
-from camera_ui import (
+from website.camera_ui import (
     CAMERA_CAPTURE_FRAME_TARGET,
     CAMERA_DEFAULT_RECOGNITION_MODE,
     camera_frame_progress,

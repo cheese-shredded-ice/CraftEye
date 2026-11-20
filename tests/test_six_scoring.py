@@ -7,10 +7,10 @@ import tempfile
 import unittest
 from contextlib import closing
 
-from ai_analysis import AnalysisError, parse_analysis
-from recognition_history import save_record, load_records, delete_records
-from scoring import DIMENSIONS, RUBRIC_VERSION, weighted_score, evaluate_dimensions, round_ratio
-from teaching_report_ui import dimensions_html as radar_html
+from website.ai_analysis import AnalysisError, parse_analysis
+from website.recognition_history import save_record, load_records, delete_records
+from website.scoring import DIMENSIONS, RUBRIC_VERSION, weighted_score, evaluate_dimensions, round_ratio
+from website.teaching_report_ui import dimensions_html as radar_html
 
 
 def dimensions_html(dimensions=None):

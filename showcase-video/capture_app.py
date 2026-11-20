@@ -9,11 +9,11 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 import streamlit as st
 from PIL import Image
-import recognition_history
-from workspace_ui import install_layout, render_brand, section_heading
-from teaching_report_ui import dimensions_html, reference_url
-from score_ui import score_html
-from history_ui import render_history
+from website import recognition_history
+from website.workspace_ui import install_layout, render_brand, section_heading
+from website.teaching_report_ui import dimensions_html, reference_url
+from website.score_ui import score_html
+from website.history_ui import render_history
 
 recognition_history.HISTORY_DB = ROOT / 'outputs/showcase/history.sqlite3'
 st.set_page_config(page_title='CraftEye 展示素材', layout='wide')

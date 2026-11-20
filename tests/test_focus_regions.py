@@ -4,8 +4,8 @@ import unittest
 
 from PIL import Image
 
-from ai_analysis import make_payload
-from focus_regions import MAX_FOCUS_CROPS, focus_regions
+from website.ai_analysis import make_payload
+from website.focus_regions import MAX_FOCUS_CROPS, focus_regions
 
 
 def row(confidence, box=(20, 20, 80, 80), label='缺陷'):

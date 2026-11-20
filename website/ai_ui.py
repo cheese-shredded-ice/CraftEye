@@ -10,18 +10,19 @@ import uuid
 
 import streamlit as st
 
-from ai_analysis import (AIConfig, AnalysisError, DEFAULT_ENDPOINT, DEFAULT_MODEL,
+from .common import ROOT
+from .ai_analysis import (AIConfig, AnalysisError, DEFAULT_ENDPOINT, DEFAULT_MODEL,
                          DEFAULT_LEARNING_GOAL, analysis_identity, analyze)
-from teaching_report_ui import report_html
-from recognition_history import save_record
-from workspace_ui import section_heading
-from scoring import DIMENSIONS, evaluate_quality
+from .teaching_report_ui import report_html
+from .recognition_history import save_record
+from .workspace_ui import section_heading
+from .scoring import DIMENSIONS, evaluate_quality
 
 
 def local_api_key():
     # Reading directly avoids a server restart after the local file is created.
     try:
-        with (Path(__file__).resolve().parent / '.streamlit' / 'secrets.toml').open('rb') as source:
+        with (ROOT / '.streamlit' / 'secrets.toml').open('rb') as source:
             value = tomllib.load(source).get('DASHSCOPE_API_KEY', '')
         return value.strip() if isinstance(value, str) else ''
     except (OSError, ValueError):
@@ -161,7 +162,7 @@ def _render_ai_analysis(namespace, source_id, original, annotated, rows, observa
                             use_container_width=True)
     if original is None:
         # The empty view keeps the same controls and report slot as a real result.
-        from workspace_ui import ai_placeholder
+        from .workspace_ui import ai_placeholder
         ai_placeholder(empty_message, view=view, include_heading=False)
         st.segmented_control('评价视图', ['六维评分', '改进建议'], default=view,
                              label_visibility='collapsed', key=view_key, width='stretch')
@@ -185,7 +186,7 @@ def _render_ai_analysis(namespace, source_id, original, annotated, rows, observa
             st.warning('本次结果已生成，但识别记录保存失败。')
         st.html(report_html(report, original, view, completed['inputs']))
     else:
-        from workspace_ui import ai_placeholder
+        from .workspace_ui import ai_placeholder
         notice = ''
         if job:
             notice = '上一份输入的分析仍在进行，完成后可分析当前图片。'

@@ -1,9 +1,9 @@
 """Five-band score scale; values are derived from the fixed weighted rubric."""
 from html import escape
-from dashboard_visuals import svg_url
+from .dashboard_visuals import svg_url
 
 
-from scoring import PROGRESS_BANDS, progress_band, scale_position
+from .scoring import PROGRESS_BANDS, progress_band, scale_position
 
 
 def score_html(score):

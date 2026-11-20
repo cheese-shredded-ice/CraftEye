@@ -11,11 +11,11 @@ APP_ROOT = Path(os.environ.get('CRAFTEYE_TEST_APP_ROOT', str(ROOT))).resolve()
 TEST_OUTPUT = ROOT / 'outputs/ai-check'
 TEST_OUTPUT.mkdir(parents=True, exist_ok=True)
 sys.path.insert(0, str(APP_ROOT))
-from scoring import DIMENSIONS
-import ai_analysis
-import ai_ui
-import recognition_history
-import demo_history
+from website.scoring import DIMENSIONS
+from website import ai_analysis
+from website import ai_ui
+from website import recognition_history
+from website import demo_history
 import streamlit as st
 
 recognition_history.HISTORY_DB = TEST_OUTPUT / 'history-test.sqlite3'

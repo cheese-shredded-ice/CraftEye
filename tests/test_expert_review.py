@@ -7,12 +7,12 @@ import unittest
 from fractions import Fraction
 from pathlib import Path
 from PIL import Image
-from ai_analysis import AIConfig, analyze, make_payload, parse_analysis
-from analysis_audit import analysis_status_html, analysis_status_lines, build_audit, audit_html
-from engineering_ui import engineering_html, evidence_payload
-from growth_chart import growth_data, growth_chart
-from scoring import DIMENSIONS, evaluate_quality, round_ratio
-from recognition_history import save_record, load_record_detail
+from website.ai_analysis import AIConfig, analyze, make_payload, parse_analysis
+from website.analysis_audit import analysis_status_html, analysis_status_lines, build_audit, audit_html
+from website.engineering_ui import engineering_html, evidence_payload
+from website.growth_chart import growth_data, growth_chart
+from website.scoring import DIMENSIONS, evaluate_quality, round_ratio
+from website.recognition_history import save_record, load_record_detail
 
 
 def raw(values):

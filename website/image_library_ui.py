@@ -7,9 +7,10 @@ from pathlib import Path
 
 from PIL import Image, ImageOps
 import streamlit as st
-from recognition_history import load_picker_records, load_picker_image, load_original_images
+from .common import ROOT
+from .recognition_history import load_picker_records, load_picker_image, load_original_images
 
-EXAMPLES = Path(__file__).with_name('assets') / 'weld-examples'
+EXAMPLES = ROOT / 'assets' / 'weld-examples'
 
 
 def catalog():

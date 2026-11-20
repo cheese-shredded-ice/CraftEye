@@ -5,21 +5,22 @@ from pathlib import Path
 
 import streamlit as st
 import base64
-from dashboard_visuals import icon_html, icon_url
+from .common import ROOT
+from .dashboard_visuals import icon_html, icon_url
 
 def install_layout():
-    root = Path(__file__).parent
+    root = ROOT
     banner = base64.b64encode((root / 'assets/dashboard/welding-banner.webp').read_bytes()).decode()
     icons = ''.join(f'--icon-{name}:url({icon_url(name)});' for name in ('image', 'camera', 'record', 'analysis', 'play', 'download', 'person'))
     # Style-only st.html uses Streamlit's shared event container, where a fragment
     # can overwrite it. Anchor the stylesheet in the main tree instead.
     st.html('<span data-workspace-style hidden></span><style>:root{--dashboard-banner:url(data:image/webp;base64,' + banner + ');'
             + icons + '}'
-            + root.joinpath('workspace.css').read_text(encoding='utf-8') + '</style>')
+            + (Path(__file__).resolve().parent / 'workspace.css').read_text(encoding='utf-8') + '</style>')
 
 
 def render_brand():
-    assets = Path(__file__).with_name('assets').joinpath('dashboard')
+    assets = ROOT / 'assets' / 'dashboard'
     logo = base64.b64encode(assets.joinpath('crafteye-logo.png').read_bytes()).decode()
     st.html('<div class="dashboard-brand"><div class="brand-logo">'
             f'<img src="data:image/png;base64,{logo}" alt="CraftEye 智能焊接评估标志">'
@@ -37,10 +38,10 @@ def detection_summary(rows):
 
 
 def ai_placeholder(message='', view='六维评分', include_heading=True, status_message=''):
-    from analysis_audit import analysis_status_html
-    from teaching_report_ui import dimensions_html
-    from score_ui import score_html
-    from scoring import DIMENSIONS
+    from .analysis_audit import analysis_status_html
+    from .teaching_report_ui import dimensions_html
+    from .score_ui import score_html
+    from .scoring import DIMENSIONS
     if include_heading:
         section_heading('综合分析')
     description = f'<p>{escape(message)}</p>' if message else ''

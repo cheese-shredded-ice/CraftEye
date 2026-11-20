@@ -64,18 +64,22 @@ CraftEye 是面向中职焊接实训的本地视觉检测与综合评价系统�
 ## 项目结构
 
 ```text
-app.py                  Streamlit 页面入口
-inference.py            YOLO / ONNX 推理与检测框绘制
-ai_analysis.py          综合分析请求与响应校验
-scoring.py              六维评分和统一结论
-camera_ui.py            摄像头取帧、截取和识别模式
-recognition_history.py  识别记录与图片存储
+app.py                  兼容启动入口，转入 website/app.py
+website/                网页运行代码、样式和评价提示词
+  app.py                Streamlit 页面入口
+  inference.py          YOLO / ONNX 推理与检测框绘制
+  ai_analysis.py        综合分析请求与响应校验
+  scoring.py            六维评分和统一结论
+  camera_ui.py          摄像头取帧、截取和识别模式
+  recognition_history.py 识别记录与图片存储
 assets/                 页面素材、示例图和缺陷参考图
 models/                 模型来源说明与本地权重
 dataset/                训练、验证、测试图片和标注
 packaging/windows/      Windows 启动器和使用说明
 docs/screenshots/       README 功能截图
 ```
+
+网页依赖的 Python 代码全部集中在 `website/`；`tests/` 和 `scripts/test_*.py` 只用于开发验证，不会被网页或 Windows 便携版运行时加载。
 
 ## 数据与模型来源
 

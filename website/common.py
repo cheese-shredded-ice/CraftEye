@@ -2,7 +2,7 @@
 import os
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent
+ROOT = Path(__file__).resolve().parents[1]
 os.environ.setdefault('YOLO_CONFIG_DIR', str(ROOT / '.ultralytics'))
 os.environ.setdefault('YOLO_AUTOINSTALL', 'false')
 DATASET = ROOT / 'dataset'

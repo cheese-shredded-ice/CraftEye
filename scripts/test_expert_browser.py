@@ -10,10 +10,10 @@ from playwright.sync_api import sync_playwright, expect
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from ai_analysis import make_payload, parse_analysis
-from analysis_audit import build_audit
-from scoring import DIMENSIONS, RUBRIC_VERSION
-from recognition_history import save_record, load_records
+from website.ai_analysis import make_payload, parse_analysis
+from website.analysis_audit import build_audit
+from website.scoring import DIMENSIONS, RUBRIC_VERSION
+from website.recognition_history import save_record, load_records
 from test_ai_browser import assert_single_screen
 
 OUT = ROOT / 'outputs/expert-review-check'

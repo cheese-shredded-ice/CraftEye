@@ -8,12 +8,12 @@ from PIL import Image
 import streamlit as st
 from streamlit_webrtc import WebRtcMode, webrtc_streamer
 
-from advice import OBSERVATIONS
-from camera import CameraProcessor
-from common import MODEL
-from inference import get_runner
-from ai_ui import render_ai_analysis, submit_analysis, detection_report
-from workspace_ui import detection_summary, section_heading
+from .advice import OBSERVATIONS
+from .camera import CameraProcessor
+from .common import MODEL
+from .inference import get_runner
+from .ai_ui import render_ai_analysis, submit_analysis, detection_report
+from .workspace_ui import detection_summary, section_heading
 
 
 CAMERA_CAPTURE_FRAME_TARGET = 10

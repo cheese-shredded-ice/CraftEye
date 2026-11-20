@@ -1,5 +1,5 @@
 import unittest
-from training_trends import training_summary
+from website.training_trends import training_summary
 
 
 def records(scores, defects=()):

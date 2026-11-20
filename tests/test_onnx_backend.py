@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 from PIL import Image
-from onnx_backend import preprocess, postprocess, non_max_suppression
+from website.onnx_backend import preprocess, postprocess, non_max_suppression
 
 
 class ONNXPostprocessTest(unittest.TestCase):

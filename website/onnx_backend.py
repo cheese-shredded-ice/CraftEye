@@ -4,7 +4,7 @@ import cv2
 import numpy as np
 import onnxruntime as ort
 
-from common import CLASS_NAMES
+from .common import CLASS_NAMES
 
 
 def preprocess(image):

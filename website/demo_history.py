@@ -5,8 +5,9 @@ import io
 from pathlib import Path
 from PIL import Image
 
-from scoring import DIMENSIONS, RUBRIC_VERSION, evaluate_quality
-from recognition_history import connect, save_record
+from .common import ROOT
+from .scoring import DIMENSIONS, RUBRIC_VERSION, evaluate_quality
+from .recognition_history import connect, save_record
 
 
 STAGES = (
@@ -44,7 +45,7 @@ def demo_records():
 
 @lru_cache(maxsize=16)
 def demo_photo(photo):
-    return (Path(__file__).resolve().parent / 'assets' / 'growth-demo' / (photo + '.jpg')).read_bytes()
+    return (ROOT / 'assets' / 'growth-demo' / (photo + '.jpg')).read_bytes()
 
 
 def ensure_training_records(path=None):

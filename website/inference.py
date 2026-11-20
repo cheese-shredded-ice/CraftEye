@@ -5,7 +5,7 @@ import math
 from PIL import ImageDraw, ImageFont
 import streamlit as st
 
-from common import MODEL, CLASS_NAMES, CHINESE_NAMES, COLORS
+from .common import MODEL, CLASS_NAMES, CHINESE_NAMES, COLORS
 
 
 def read_annotation(label, size):
@@ -65,7 +65,7 @@ class ModelRunner:
         self.lock = threading.Lock()
         self.onnx = str(path).lower().endswith('.onnx')
         if self.onnx:
-            from onnx_backend import ONNXDetector
+            from .onnx_backend import ONNXDetector
             self.model = ONNXDetector(path)
             self.device = 'cpu'
             return

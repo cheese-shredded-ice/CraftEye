@@ -6,7 +6,7 @@ import unittest
 import av
 from PIL import Image
 
-from camera import CameraProcessor
+from website.camera import CameraProcessor
 
 
 def frame(color='red'):

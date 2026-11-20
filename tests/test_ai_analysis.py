@@ -1,5 +1,5 @@
 import copy
-from scoring import DIMENSIONS
+from website.scoring import DIMENSIONS
 import base64
 import io
 import json
@@ -8,7 +8,7 @@ import unittest
 from PIL import Image
 import requests
 
-from ai_analysis import (AIConfig, AnalysisError, SECTIONS, analyze, analysis_identity,
+from website.ai_analysis import (AIConfig, AnalysisError, SECTIONS, analyze, analysis_identity,
                          endpoint_url, parse_analysis, report_text)
 
 

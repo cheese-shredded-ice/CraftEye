@@ -6,7 +6,7 @@ from playwright.sync_api import sync_playwright, expect
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from recognition_history import save_record, load_records, load_record_images
+from website.recognition_history import save_record, load_records, load_record_images
 
 OUTPUT = ROOT / 'outputs/ai-check'
 DB = OUTPUT / 'history-test.sqlite3'

@@ -17,3 +17,17 @@ outputs/
 安卓安装包/
 Ultralytics/
 *.pyc
+# Local inspection and presentation exports
+5g-readme.md
+camera-dom.png
+camera-narrow-check.png
+inspect_*.py
+tree.json
+repo*.zip
+Craft Eye*.pptx
+Craft Eye*.pdf
+YOLO-Weld-Defect-Detection-WebApp/
+YOLO-Weld-Defect-Detection-WebApp-new/
+weld-webapp/
+历史记录成长曲线.png
+识别界面.png

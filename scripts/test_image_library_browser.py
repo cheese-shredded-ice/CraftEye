@@ -5,7 +5,7 @@ from PIL import Image
 from playwright.sync_api import sync_playwright, expect
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT))
-from recognition_history import save_record,delete_records,load_picker_records
+from website.recognition_history import save_record,delete_records,load_picker_records
 OUT=ROOT/'outputs/image-library-check'
 DB=ROOT/'outputs/ai-check/history-test.sqlite3'
 first=ROOT/'assets/weld-examples/uniform.jpg'

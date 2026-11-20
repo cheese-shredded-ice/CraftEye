@@ -5,9 +5,10 @@ import json
 import io
 import sqlite3
 from PIL import Image
-from scoring import RUBRIC_VERSION
+from .common import ROOT
+from .scoring import RUBRIC_VERSION
 
-HISTORY_DB = Path(__file__).resolve().parent / 'outputs' / 'recognition-history.sqlite3'
+HISTORY_DB = ROOT / 'outputs' / 'recognition-history.sqlite3'
 
 # Number all surviving records before filtering or pagination. Keep the stored
 # primary key unchanged so deletion and saved report identities remain stable.

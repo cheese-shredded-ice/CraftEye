@@ -8,8 +8,8 @@ from PIL import Image
 
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT))
-from common import DATASET
-from onnx_backend import ONNXDetector, preprocess, postprocess
+from website.common import DATASET
+from website.onnx_backend import ONNXDetector, preprocess, postprocess
 import torch
 from ultralytics import YOLO
 

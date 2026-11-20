@@ -3,8 +3,8 @@ import argparse
 import json
 from pathlib import Path
 
-from common import MODEL, ROOT, CLASS_NAMES, CHINESE_NAMES
-from advice import build_advice, advice_text
+from website.common import MODEL, ROOT, CLASS_NAMES, CHINESE_NAMES
+from website.advice import build_advice, advice_text
 
 
 def main():

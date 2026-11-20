@@ -2,9 +2,9 @@ import unittest
 
 from PIL import Image
 
-from defect_references import REFERENCES, REFERENCE_DIR, matched_references
-from score_ui import score_html
-from scoring import score_band, progress_band
+from website.defect_references import REFERENCES, REFERENCE_DIR, matched_references
+from website.score_ui import score_html
+from website.scoring import score_band, progress_band
 
 
 class TeachingVisualsTest(unittest.TestCase):

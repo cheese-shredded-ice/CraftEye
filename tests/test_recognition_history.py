@@ -8,7 +8,7 @@ import unittest
 from unittest.mock import patch
 
 from PIL import Image, ImageDraw
-from recognition_history import load_records, save_record, load_record_images, delete_records, load_picker_records, load_picker_image, load_record_detail, load_original_images
+from website.recognition_history import load_records, save_record, load_record_images, delete_records, load_picker_records, load_picker_image, load_record_detail, load_original_images
 
 
 def report(score=76):
@@ -51,18 +51,18 @@ class RecognitionHistoryTest(unittest.TestCase):
         self.assertEqual(load_records(self.path), [])
 
     def test_completed_request_is_saved_before_ui_consumes_result(self):
-        from ai_ui import analyze_and_record
-        with patch('ai_ui.analyze', return_value=report()), patch('ai_ui.save_record') as save:
+        from website.ai_ui import analyze_and_record
+        with patch('website.ai_ui.analyze', return_value=report()), patch('website.ai_ui.save_record') as save:
             result = analyze_and_record('run', 'camera', 'input')
         save.assert_called_once_with('run', 'camera', result, annotated=None, original='input', inputs=None)
-        with patch('ai_ui.analyze', side_effect=RuntimeError('failed')), patch('ai_ui.save_record') as save:
+        with patch('website.ai_ui.analyze', side_effect=RuntimeError('failed')), patch('website.ai_ui.save_record') as save:
             with self.assertRaises(RuntimeError):
                 analyze_and_record('failed', 'image')
         save.assert_not_called()
 
     def test_storage_failure_preserves_completed_report(self):
-        from ai_ui import analyze_and_record
-        with patch('ai_ui.analyze', return_value=report()), patch('ai_ui.save_record', side_effect=OSError('disk full')):
+        from website.ai_ui import analyze_and_record
+        with patch('website.ai_ui.analyze', return_value=report()), patch('website.ai_ui.save_record', side_effect=OSError('disk full')):
             result = analyze_and_record('run', 'image')
         self.assertEqual(result['score']['分数'], 76)
         self.assertTrue(result['history_save_error'])
@@ -91,10 +91,10 @@ class RecognitionHistoryTest(unittest.TestCase):
         self.assertEqual(set(load_record_images(['legacy', 'new'], self.path)), {'new'})
 
     def test_worker_saves_annotated_image_not_original(self):
-        from ai_ui import analyze_and_record
+        from website.ai_ui import analyze_and_record
         original = Image.new('RGB', (30, 30), 'gray')
         annotated = Image.new('RGB', (30, 30), 'red')
-        with patch('ai_ui.analyze', return_value=report()), patch('ai_ui.save_record') as save:
+        with patch('website.ai_ui.analyze', return_value=report()), patch('website.ai_ui.save_record') as save:
             result = analyze_and_record('run', 'camera', original, annotated)
         save.assert_called_once_with('run', 'camera', result, annotated=annotated, original=original, inputs=None)
 
@@ -140,7 +140,7 @@ class RecognitionHistoryTest(unittest.TestCase):
         self.assertNotIn(b'must-not-be-stored',self.path.read_bytes())
         self.assertEqual(Image.open(io.BytesIO(detail['original_png'])).tobytes(),original.tobytes())
         self.assertEqual(Image.open(io.BytesIO(detail['annotated_png'])).tobytes(),annotated.tobytes())
-        from history_ui import detail_archive
+        from website.history_ui import detail_archive
         import zipfile,json
         with zipfile.ZipFile(io.BytesIO(detail_archive(detail))) as archive:
             self.assertEqual(set(archive.namelist()),{'report.json','original.png','detection.png'})
@@ -185,8 +185,8 @@ class RecognitionHistoryTest(unittest.TestCase):
 
     def test_display_numbers_close_gaps_across_table_chart_details_and_export(self):
         import csv
-        from growth_chart import growth_data
-        from history_ui import export_csv
+        from website.growth_chart import growth_data
+        from website.history_ui import export_csv
         original = Image.new('RGB', (20, 20), 'blue')
         for i in range(8):
             save_record(str(i), 'image', report(70 + i), self.path, original=original)

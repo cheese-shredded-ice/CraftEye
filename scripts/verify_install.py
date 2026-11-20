@@ -8,7 +8,7 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from common import DATASET, MODEL, CLASS_NAMES, write_data_yaml
+from website.common import DATASET, MODEL, CLASS_NAMES, write_data_yaml
 from download_dataset import matches
 
 

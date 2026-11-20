@@ -9,14 +9,14 @@ import zipfile
 
 import streamlit as st
 
-from recognition_history import load_records, load_original_images, load_record_detail, delete_records
-from teaching_report_ui import dimensions_html
-from score_ui import score_html
-from training_trends import summary_html
-from scoring import decision_style
-from analysis_audit import audit_html
-from growth_chart import growth_chart
-from demo_history import ensure_training_records
+from .recognition_history import load_records, load_original_images, load_record_detail, delete_records
+from .teaching_report_ui import dimensions_html
+from .score_ui import score_html
+from .training_trends import summary_html
+from .scoring import decision_style
+from .analysis_audit import audit_html
+from .growth_chart import growth_chart
+from .demo_history import ensure_training_records
 
 PAGE_SIZE = 5
 

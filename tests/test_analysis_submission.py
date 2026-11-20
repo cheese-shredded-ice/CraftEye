@@ -2,8 +2,8 @@ import unittest
 from unittest.mock import Mock, patch
 
 from PIL import Image
-from ai_analysis import AIConfig
-from ai_ui import submit_analysis
+from website.ai_analysis import AIConfig
+from website.ai_ui import submit_analysis
 
 
 class AnalysisSubmissionTest(unittest.TestCase):
@@ -11,10 +11,10 @@ class AnalysisSubmissionTest(unittest.TestCase):
         state, executor = {}, Mock()
         image = Image.new('RGB', (50, 50))
         args = ('image', 'source', image, image, [], [])
-        with patch('ai_ui.st.session_state', state), patch('ai_ui.get_executor', return_value=executor), patch('ai_ui.current_config', return_value=AIConfig('')):
+        with patch('website.ai_ui.st.session_state', state), patch('website.ai_ui.get_executor', return_value=executor), patch('website.ai_ui.current_config', return_value=AIConfig('')):
             self.assertFalse(submit_analysis(*args))
         executor.submit.assert_not_called()
-        with patch('ai_ui.st.session_state', state), patch('ai_ui.get_executor', return_value=executor), patch('ai_ui.current_config', return_value=AIConfig('test')):
+        with patch('website.ai_ui.st.session_state', state), patch('website.ai_ui.get_executor', return_value=executor), patch('website.ai_ui.current_config', return_value=AIConfig('test')):
             self.assertTrue(submit_analysis(*args))
             self.assertFalse(submit_analysis(*args))
             executor.submit.assert_called_once()

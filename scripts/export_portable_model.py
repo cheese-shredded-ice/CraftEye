@@ -4,7 +4,7 @@ import sys
 
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT))
-import common  # Sets YOLO_AUTOINSTALL=false before importing Ultralytics.
+from website import common  # Sets YOLO_AUTOINSTALL=false before importing Ultralytics.
 import torch
 from ultralytics import YOLO
 

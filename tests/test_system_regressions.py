@@ -4,9 +4,9 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from ai_analysis import AIConfig
-from ai_ui import detection_report, export_signature
-from inference import read_annotation
+from website.ai_analysis import AIConfig
+from website.ai_ui import detection_report, export_signature
+from website.inference import read_annotation
 
 
 class ExportTest(unittest.TestCase):
@@ -15,12 +15,12 @@ class ExportTest(unittest.TestCase):
         local = {'manual_observations': ['成形不均匀'], 'detections': []}
         completed = {'export_signature': export_signature('image-a', local['manual_observations'], config),
                      'report': {'dimensions': {'成形质量': 80}, 'score': {'分数': 75}}}
-        with patch('ai_ui.st.session_state', {'_ai_result_image': completed}), patch('ai_ui.current_config', return_value=config):
+        with patch('website.ai_ui.st.session_state', {'_ai_result_image': completed}), patch('website.ai_ui.current_config', return_value=config):
             self.assertEqual(detection_report('image', 'image-a', local)['analysis'], completed['report'])
             self.assertNotIn('analysis', detection_report('image', 'image-b', local))
             self.assertNotIn('analysis', detection_report('image', 'image-a', {**local, 'manual_observations': []}))
             self.assertNotIn(config.api_key, str(detection_report('image', 'image-a', local)))
-        with patch('ai_ui.st.session_state', {'_ai_result_image': completed}), patch('ai_ui.current_config', return_value=AIConfig('key', model='different')):
+        with patch('website.ai_ui.st.session_state', {'_ai_result_image': completed}), patch('website.ai_ui.current_config', return_value=AIConfig('key', model='different')):
             self.assertNotIn('analysis', detection_report('image', 'image-a', local))
 
 

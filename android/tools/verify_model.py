@@ -10,7 +10,7 @@ import torch
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0,str(ROOT))
-from common import MODEL
+from website.common import MODEL
 from ultralytics import YOLO
 from ultralytics.utils.nms import non_max_suppression
 

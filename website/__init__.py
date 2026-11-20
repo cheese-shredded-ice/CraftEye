@@ -1,0 +1,1 @@
+"""CraftEye web application package."""
